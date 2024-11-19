@@ -295,10 +295,14 @@ void get_locations(station stations[], size_t length, location *datum,
   get_coords(stations, length, datum, lon, lat, close_loops);
   for (int i = 0; i < length; i++) {
     station *s = &stations[i];
-    if (s->fixed)
-      continue;
-    location new = gps_add(datum, lon[i], lat[i]);
-    lon[i] = new.lon;
-    lat[i] = new.lat;
+    if (s->fixed) {
+      lat[i] = s->location.lat;
+      lon[i] = s->location.lon;
+    }
+    else {
+      location new = gps_add(datum, lon[i], lat[i]);
+      lon[i] = new.lon;
+      lat[i] = new.lat;
+    }
   }
 }

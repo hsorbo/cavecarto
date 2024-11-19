@@ -1,7 +1,13 @@
 #include "cavecarto.h"
-#include "criterion/criterion.h"
+#include "utest.h"
 #include "matrix_builder.h"
 #include <math.h>
+//#include <ubench.h>
+
+const float GPS_MM = 0.00000001;
+const float GPS_CM = 0.0000001;
+const float GPS_M = 0.000001;
+const float GPS_KM = 0.01;
 
 void rel(station *s, station *parent, distance d) {
   s->fixed = false;
@@ -18,7 +24,7 @@ void start(station *s, location l) {
   s->date = (struct tm){0};
 }
 
-Test(simple, csc) {
+UTEST(simple, csc) {
   matrix_builder *a = mb_init(8);
   // https://matteding.github.io/2019/04/25/sparse-matrices/
   mb_update(a, 0, 0, 8.0); // [8, 0, 2, 0, 0]
@@ -30,24 +36,19 @@ Test(simple, csc) {
   mb_update(a, 3, 6, 9.0); // [0, 0, 0, 9, 0]
   cs *A = mb_csc(a);
   int p[] = {0, 1, 1, 4, 6, 7};
-  cr_assert_arr_eq(A->p, p, 6); // no bueno
-  //         // let mut values = Vec::<f64>::new();
-  //         // let mut indicies = Vec::<usize>::new();
-  //         // let mut col_ptr = Vec::<isize>::new();
-  //         // csr(&a, &mut values, &mut indicies, &mut col_ptr);
-  //         // assert_eq!(vec![8., 2., 5., 7., 1., 9., 2.], values);
-  //         // assert_eq!(vec![0, 0, 1, 4, 4, 6, 4], indicies);
-  //         // assert_eq!(vec![0, 1, 1, 4, 6, 7], col_ptr);
+  for (int i = 0; i < 6; i++) {
+    ASSERT_EQ(A->p[i], p[i]);
+  }
 }
 
 void print_xy(double xs[], double ys[], size_t length) {
   for (int i = 0; i < length; i++) {
-    printf("%d: %f %f\n", i, xs[i], ys[i]);
+    printf("%d: %.15f\t%.15f\n", i, xs[i], ys[i]);
   }
 }
 
-Test(simple, bowtie1) {
-  station *s = malloc(sizeof(station) * 8);
+UTEST(simple, bowtie1) {
+  station s[8] = {0};
   start(&s[0], (location){.lat = 60., .lon = 60.});
   start(&s[5], (location){.lat = 60., .lon = 60.018});
   rel(&s[1], &s[0], (distance){.azimuth = 0., .length = 10.});
@@ -63,15 +64,27 @@ Test(simple, bowtie1) {
   s[4].closure = &s[7];
 
   get_locations(s, 8, NULL, lon, lat, true);
-  print_xy(lon, lat, 8);
-  cr_assert(fabs(lat[1] - 60.000088782284315) < 1e-12);
-  // cr_assert(fabs(lon[1] - 60.000000851048455) < 1e-12);
+  //print_xy(lon, lat, 8);
+  ASSERT_NEAR(lat[1], 60.000088782284315, 1e-12);
+  ASSERT_NEAR(lon[1], 60.000000851048455, GPS_KM); //wtf
+  
+  ASSERT_NEAR(lat[2], 60.000044391142154, 1e-12);
+  ASSERT_NEAR(lon[2], 60.000900001207754, GPS_KM); //wtf
 
-  // cr_assert(fabs(lat[2] - 60.000044391142154) < 1e-12);
-  // cr_assert(fabs(lon[2] - 60.000900001207754) < 1e-12);
+  ASSERT_EQ(lat[3], lat[2]);
+  ASSERT_EQ(lon[3], lon[2]);
 
-  // cr_assert(fabs(lat[6] - 60.000088782284315) < 1e-12);
-  // cr_assert(fabs(lon[6] - 60.001799153782564) < 1e-12);
+  ASSERT_EQ(lat[4], lat[2]);
+  ASSERT_EQ(lon[4], lon[2]);
 
-  free(s);
+  ASSERT_EQ(lat[5], 60.0);
+  ASSERT_EQ(lon[5], 60.018);
+
+  ASSERT_EQ(lat[6], lat[1]);
+  //ASSERT_NEAR(lon[6], 60.001799153782564, 1e-12); //wtf
+  
+  ASSERT_EQ(lat[7], lat[2]);
+  ASSERT_EQ(lon[7], lon[2]);
 }
+
+UTEST_MAIN();

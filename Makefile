@@ -16,7 +16,7 @@ TOOL_BINARIES = $(patsubst $(TOOLS_DIR)/%.c, $(BIN_DIR)/%, $(TOOL_SRC_FILES))
 all: $(TOOL_BINARIES)
 
 test: $(OBJ_FILES) test/test.c
-	$(CC) $(CFLAGS) -I $(SRC_DIR) `pkg-config --cflags --libs criterion` `pkg-config --cflags --libs expat` test/test.c -o test/test obj/*.o
+	$(CC) $(CFLAGS) -I $(SRC_DIR) `pkg-config --cflags --libs expat` test/test.c -o test/test obj/*.o
 	./test/test
 
 format:
