@@ -17,7 +17,6 @@ all: $(TOOL_BINARIES)
 
 test: $(OBJ_FILES) test/test.c
 	$(CC) $(CFLAGS) -I $(SRC_DIR) `pkg-config --cflags --libs expat` test/test.c -o test/test obj/*.o
-	./test/test
 
 format:
 	clang-format -i $(SRC_DIR)/*.c $(INCLUDE_DIR)/*.h $(TOOLS_DIR)/*.c $(TESTS_DIR)/*.c

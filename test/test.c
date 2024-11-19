@@ -41,16 +41,15 @@ UTEST(simple, csc) {
   }
 }
 
-void print_xy(double xs[], double ys[], size_t length) {
-  for (int i = 0; i < length; i++) {
-    printf("%d: %.15f\t%.15f\n", i, xs[i], ys[i]);
-  }
-}
-
+// static void print_xy(double xs[], double ys[], size_t length) {
+//   for (int i = 0; i < length; i++) {
+//     printf("%d: %.15f\t%.15f\n", i, xs[i], ys[i]);
+//   }
+// }
 UTEST(simple, bowtie1) {
   station s[8] = {0};
   start(&s[0], (location){.lat = 60., .lon = 60.});
-  start(&s[5], (location){.lat = 60., .lon = 60.018});
+  start(&s[5], (location){.lat = 60., .lon = 60.0018});
   rel(&s[1], &s[0], (distance){.azimuth = 0., .length = 10.});
   rel(&s[2], &s[1], (distance){.azimuth = 95., .length = 50.});
   rel(&s[3], &s[0], (distance){.azimuth = 85., .length = 50.});
@@ -58,18 +57,18 @@ UTEST(simple, bowtie1) {
   rel(&s[6], &s[5], (distance){.azimuth = 0., .length = 10.});
   rel(&s[7], &s[6], (distance){.azimuth = 265., .length = 50.});
 
-  double lon[8], lat[8];
   s[2].closure = &s[7];
   s[3].closure = &s[7];
   s[4].closure = &s[7];
 
+  double lon[8], lat[8];
   get_locations(s, 8, NULL, lon, lat, true);
-  //print_xy(lon, lat, 8);
+  
   ASSERT_NEAR(lat[1], 60.000088782284315, 1e-12);
-  ASSERT_NEAR(lon[1], 60.000000851048455, GPS_KM); //wtf
+  ASSERT_NEAR(lon[1], 60.000000851048455, 1e-12);
   
   ASSERT_NEAR(lat[2], 60.000044391142154, 1e-12);
-  ASSERT_NEAR(lon[2], 60.000900001207754, GPS_KM); //wtf
+  ASSERT_NEAR(lon[2], 60.000900001207754, 1e-12);
 
   ASSERT_EQ(lat[3], lat[2]);
   ASSERT_EQ(lon[3], lon[2]);
@@ -78,10 +77,10 @@ UTEST(simple, bowtie1) {
   ASSERT_EQ(lon[4], lon[2]);
 
   ASSERT_EQ(lat[5], 60.0);
-  ASSERT_EQ(lon[5], 60.018);
+  ASSERT_EQ(lon[5], 60.0018);
 
   ASSERT_EQ(lat[6], lat[1]);
-  //ASSERT_NEAR(lon[6], 60.001799153782564, 1e-12); //wtf
+  ASSERT_NEAR(lon[6], 60.001799153782564, 1e-12);
   
   ASSERT_EQ(lat[7], lat[2]);
   ASSERT_EQ(lon[7], lon[2]);
