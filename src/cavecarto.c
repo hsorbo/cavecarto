@@ -157,18 +157,21 @@ void close_leastsquare(station stations[], size_t length, double xs[],
                        double ys[]) {
   ssize_t *adjust_station_idx = malloc(sizeof(ssize_t) * length);
   size_t adj_station_count = 0;
+  size_t fix_station_count = 0;
   for (int i = 0; i < length; i++) {
     station *current = &stations[i];
     bool adjustable = !current->fixed && current->closure == NULL;
+    //this estimation is shady, ... do better
+    fix_station_count += current->fixed ? 1 : 0;
+    fix_station_count += current->parent != NULL && current->parent->fixed ? 1 : 0;
     adjust_station_idx[i] = adjustable ? adj_station_count++ : -1;
   }
-  double *bx = malloc(sizeof(double) * adj_station_count);
-  double *by = malloc(sizeof(double) * adj_station_count);
+  double *bx = calloc(adj_station_count, sizeof(double));
+  double *by = calloc(adj_station_count, sizeof(double));
 
   matrix_builder *a = mb_init(adj_station_count);
 
-  start_adj *p = malloc(sizeof(start_adj) * adj_station_count);
-  bzero(p, sizeof(start_adj) * adj_station_count);
+  start_adj *p = calloc(fix_station_count, sizeof(start_adj));
   int plen = 0;
 
   for (int i = 0; i < length; i++) {
@@ -192,38 +195,41 @@ void close_leastsquare(station stations[], size_t length, double xs[],
 
     ssize_t to_index = adjust_station_idx[current - stations];
     ssize_t from_index = adjust_station_idx[parent - stations];
-
-    if (to_index >= 0) {
+    
+    assert((to_index == -1 && current->fixed) || (to_index >= 0 && !current->fixed));
+    assert((from_index == -1 && parent->fixed) || (from_index >= 0 && !parent->fixed));
+    
+    if (!current->fixed) {
       bx[to_index] += weight * distance.x;
       by[to_index] += weight * distance.y;
       mb_update(a, to_index, to_index, weight);
     }
 
-    if (from_index >= 0) {
+    if (!parent->fixed) {
       bx[from_index] += -weight * distance.x;
       by[from_index] += -weight * distance.y;
       mb_update(a, from_index, from_index, weight);
     }
 
-    if (from_index >= 0 && to_index >= 0) {
+    if (!parent->fixed && !current->fixed) {
       mb_update(a, to_index, from_index, -weight);
       mb_update(a, from_index, to_index, -weight);
     }
 
-    if (current->fixed) {
+    if (current->fixed && !parent->fixed) {
       p[plen++] = (start_adj){.start_station = current, .to_station = parent, .weight = weight};
-    } else if (parent->fixed) {
+    } else if (parent->fixed && !current->fixed) {
       p[plen++] = (start_adj){.start_station = parent, .to_station = current, .weight = weight};
     }
+    assert(plen <= (fix_station_count + 1));
   }
 
   for (int i = 0; i < plen; i++) {
     start_adj xx = p[i];
     ssize_t idx = adjust_station_idx[xx.to_station - stations];
-    if (idx != -1) {
-      bx[idx] += xx.weight * xs[xx.start_station - stations];
-      by[idx] += xx.weight * ys[xx.start_station - stations];
-    }
+    assert (idx != -1); //used to be if
+    bx[idx] += xx.weight * xs[xx.start_station - stations];
+    by[idx] += xx.weight * ys[xx.start_station - stations];
   }
   cs *A = mb_csc(a);
   // cs_print(A, 0);
@@ -257,11 +263,12 @@ void close_leastsquare(station stations[], size_t length, double xs[],
       ys[i] = ys[s->closure - stations];
     }
   }
-  cs_free(A);
+  cs_spfree(A);
   free(bx);
   free(by);
-  free(a);
+  mb_free(a);
   free(p);
+  free(adjust_station_idx);
 }
 
 location *find_datum(station stations[], size_t length) {
@@ -288,10 +295,14 @@ void get_locations(station stations[], size_t length, location *datum,
   get_coords(stations, length, datum, lon, lat, close_loops);
   for (int i = 0; i < length; i++) {
     station *s = &stations[i];
-    if (s->fixed)
-      continue;
-    location new = gps_add(datum, lon[i], lat[i]);
-    lon[i] = new.lon;
-    lat[i] = new.lat;
+    if (s->fixed) {
+      lat[i] = s->location.lat;
+      lon[i] = s->location.lon;
+    }
+    else {
+      location new = gps_add(datum, lon[i], lat[i]);
+      lon[i] = new.lon;
+      lat[i] = new.lat;
+    }
   }
 }
