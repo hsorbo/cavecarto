@@ -1314,7 +1314,7 @@ void *cs_realloc(void *p, int n, size_t size, int *ok) {
     return (p);                         /* p unchanged if n too large */
   p2 = realloc(p, CS_MAX(n, 1) * size); /* realloc the block */
   *ok = (p2 != NULL);
-  return ((*ok) ? p2 : p); /* return original p if failure */
+  return (p2 != NULL ? p2 : p); /* return original p if failure */
 }
 
 /* find an augmenting path starting at column k and extend the match if found */
