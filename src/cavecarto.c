@@ -58,7 +58,7 @@ location gps_add(location *src, double x, double y) {
 
 double calc_distance(double from_depth, double to_depth, double length) {
   double delta_depth = fabs(from_depth - to_depth);
-  double hyp = length < delta_depth ? length + 0.05 : length;
+  double hyp = length <= delta_depth ? length + 0.05 : length;
   double length_xy = sqrt(pow(hyp, 2) - pow(delta_depth, 2));
   assert(length_xy == length_xy); // Nan check
   return length_xy;
