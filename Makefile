@@ -15,6 +15,11 @@ TOOL_BINARIES = $(patsubst $(TOOLS_DIR)/%.c, $(BIN_DIR)/%, $(TOOL_SRC_FILES))
 
 all: $(TOOL_BINARIES)
 
+meh1:
+	http-server -c1 .
+meh2:
+	emcc -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,UTF8ToString -sEXPORTED_FUNCTIONS=_hello bibliotekar.c -o bibliotekar.mjs --emit-tsd=bibliotekar.d.ts
+
 test: $(OBJ_FILES) test/test.c
 	$(CC) $(CFLAGS) -I $(SRC_DIR) `pkg-config --cflags --libs expat` test/test.c -o test/test obj/*.o
 
