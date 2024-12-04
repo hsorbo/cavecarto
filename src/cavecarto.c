@@ -9,6 +9,47 @@
 
 const double EARTH_CIRCUMFERENCE = 4.007516E7;
 
+cave *cave_init_with_capacity(size_t capacity) {
+  cave *c = malloc(sizeof(cave));
+  c->stations = malloc(sizeof(station) * capacity);
+  c->stations_count = 0;
+  return c;
+}
+
+void cave_free(cave *cave) {
+  free(cave->stations);
+  free(cave);
+}
+
+station *cave_add_fixed(cave *cave, location location, double depth,
+                        struct tm date, void *user_data) {
+  // todo: grow if too small
+  station *station = &cave->stations[cave->stations_count++];
+  station->location = location;
+  station->depth = depth;
+  station->fixed = true;
+  station->parent = NULL;
+  station->closure = NULL;
+  station->date = date;
+  station->userData = user_data;
+  return station;
+}
+
+station *cave_add_relative(cave *cave, station *parent, distance distance,
+                           double depth, struct tm date, void *user_data) {
+  assert(parent != NULL);
+  // todo: grow if too small
+  station *station = &cave->stations[cave->stations_count++];
+  station->distance = distance;
+  station->depth = depth;
+  station->fixed = false;
+  station->parent = parent;
+  station->closure = NULL;
+  station->date = date;
+  station->userData = user_data;
+  return station;
+}
+
 typedef struct vec2 {
   double x;
   double y;
