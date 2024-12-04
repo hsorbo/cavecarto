@@ -12,7 +12,7 @@ matrix_builder *mb_init(size_t size) {
   return a;
 }
 
-void mb_free(matrix_builder * mb) {
+void mb_free(matrix_builder *mb) {
   free(mb->cols);
   free(mb);
 }

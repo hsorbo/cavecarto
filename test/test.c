@@ -1,8 +1,7 @@
 #include "cavecarto.h"
-#include "utest.h"
 #include "matrix_builder.h"
+#include "utest.h"
 #include <math.h>
-//#include <ubench.h>
 
 const float GPS_MM = 0.00000001;
 const float GPS_CM = 0.0000001;
@@ -63,10 +62,10 @@ UTEST(simple, bowtie1) {
 
   double lon[8], lat[8];
   get_locations(s, 8, NULL, lon, lat, true);
-  
+
   ASSERT_NEAR(lat[1], 60.000088782284315, 1e-12);
   ASSERT_NEAR(lon[1], 60.000000851048455, 1e-12);
-  
+
   ASSERT_NEAR(lat[2], 60.000044391142154, 1e-12);
   ASSERT_NEAR(lon[2], 60.000900001207754, 1e-12);
 
@@ -81,7 +80,7 @@ UTEST(simple, bowtie1) {
 
   ASSERT_EQ(lat[6], lat[1]);
   ASSERT_NEAR(lon[6], 60.001799153782564, 1e-12);
-  
+
   ASSERT_EQ(lat[7], lat[2]);
   ASSERT_EQ(lon[7], lon[2]);
 }

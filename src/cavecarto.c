@@ -161,7 +161,7 @@ void close_leastsquare(station stations[], size_t length, double xs[],
   for (int i = 0; i < length; i++) {
     station *current = &stations[i];
     bool adjustable = !current->fixed && current->closure == NULL;
-    //this estimation is shady, ... do better
+    // this estimation is shady, ... do better
     fix_station_count += current->fixed ? 1 : 0;
     fix_station_count += current->parent != NULL && current->parent->fixed ? 1 : 0;
     adjust_station_idx[i] = adjustable ? adj_station_count++ : -1;
@@ -195,10 +195,10 @@ void close_leastsquare(station stations[], size_t length, double xs[],
 
     ssize_t to_index = adjust_station_idx[current - stations];
     ssize_t from_index = adjust_station_idx[parent - stations];
-    
+
     assert((to_index == -1 && current->fixed) || (to_index >= 0 && !current->fixed));
     assert((from_index == -1 && parent->fixed) || (from_index >= 0 && !parent->fixed));
-    
+
     if (!current->fixed) {
       bx[to_index] += weight * distance.x;
       by[to_index] += weight * distance.y;
@@ -227,7 +227,7 @@ void close_leastsquare(station stations[], size_t length, double xs[],
   for (int i = 0; i < plen; i++) {
     start_adj xx = p[i];
     ssize_t idx = adjust_station_idx[xx.to_station - stations];
-    assert (idx != -1); //used to be if
+    assert(idx != -1); // used to be if
     bx[idx] += xx.weight * xs[xx.start_station - stations];
     by[idx] += xx.weight * ys[xx.start_station - stations];
   }
@@ -298,8 +298,7 @@ void get_locations(station stations[], size_t length, location *datum,
     if (s->fixed) {
       lat[i] = s->location.lat;
       lon[i] = s->location.lon;
-    }
-    else {
+    } else {
       location new = gps_add(datum, lon[i], lat[i]);
       lon[i] = new.lon;
       lat[i] = new.lat;

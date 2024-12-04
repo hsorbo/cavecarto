@@ -12,14 +12,14 @@ size_t read_stations(sqlite3 *db, station *stations_in[]) {
   char query_count[] = "select count(*) from stations;";
 
   if (sqlite3_prepare_v2(db, query_count, -1, &stmt, NULL) != SQLITE_OK) {
-    return -1; //Failed to count stations
+    return -1; // Failed to count stations
   }
 
   if (sqlite3_step(stmt) != SQLITE_ROW) {
     sqlite3_finalize(stmt);
     return -1;
   }
-  
+
   size_t station_count = sqlite3_column_int(stmt, 0);
   sqlite3_finalize(stmt);
 
@@ -39,17 +39,17 @@ size_t read_stations(sqlite3 *db, station *stations_in[]) {
         distance,\
         azimuth \
         from stations ORDER by id;";
-  
+
   if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
     sqlite3_finalize(stmt);
-    return -1; //Failed to prepare
+    return -1; // Failed to prepare
   }
 
-  station* stations = malloc(sizeof(station) * station_count);
+  station *stations = malloc(sizeof(station) * station_count);
   size_t *ids = malloc(sizeof(size_t) * station_count);
   size_t *parents = malloc(sizeof(size_t) * station_count);
   size_t *linked = malloc(sizeof(size_t) * station_count);
-  
+
   int i = 0;
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     station *station = &stations[i];
@@ -62,18 +62,17 @@ size_t read_stations(sqlite3 *db, station *stations_in[]) {
     if (station->fixed) {
       station->location.lat = sqlite3_column_double(stmt, 6);
       station->location.lon = sqlite3_column_double(stmt, 7);
-    }
-    else {
+    } else {
       station->distance.length = sqlite3_column_double(stmt, 8);
       station->distance.azimuth = sqlite3_column_double(stmt, 9);
     }
     station->parent = NULL;
     station->closure = NULL;
-    station->userData = (void *) ids[i];
+    station->userData = (void *)ids[i];
     i++;
   }
   sqlite3_finalize(stmt);
-  //assert(i == station_count);
+  // assert(i == station_count);
 
   for (i = 0; i < station_count; i++) {
     station *station = &stations[i];
@@ -96,7 +95,7 @@ size_t read_stations(sqlite3 *db, station *stations_in[]) {
     }
     if (link != -1) {
       size_t *result = (size_t *)bsearch(&link, ids, station_count, sizeof(size_t), cmp);
-      //assert(result != NULL);
+      // assert(result != NULL);
       station->closure = &stations[result - ids];
     }
   }
