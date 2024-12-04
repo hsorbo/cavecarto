@@ -4,7 +4,7 @@
 #include "ubench.h"
 
 UBENCH_EX(close, obh) {
-  char *file = "/Users/hsorbo/Projects/cave/testdata-private/OBH_Complete.db";
+  char *file = "big.db";
 
   sqlite3 *db;
   if (sqlite3_open(file, &db) != SQLITE_OK) {
