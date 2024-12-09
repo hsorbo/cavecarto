@@ -58,7 +58,7 @@ size_t read_stations(sqlite3 *db, station *stations_in[]) {
     linked[i] = sqlite3_column_type(stmt, 2) == SQLITE_NULL ? -1 : sqlite3_column_int(stmt, 2);
     station->fixed = sqlite3_column_int(stmt, 3);
     station->depth = sqlite3_column_double(stmt, 4);
-    strftime((char *)sqlite3_column_text(stmt, 5), 11, "%Y-%m-%d", &station->date);
+    strptime((char *)sqlite3_column_text(stmt, 5), "%Y-%m-%d", &station->date);
     if (station->fixed) {
       station->location.lat = sqlite3_column_double(stmt, 6);
       station->location.lon = sqlite3_column_double(stmt, 7);
