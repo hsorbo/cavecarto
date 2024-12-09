@@ -2,34 +2,52 @@
 #include "sqlite3.h"
 #include "surveyfile.h"
 #include "ubench.h"
+#include "igrf.h"
+#include <assert.h>
 
-UBENCH_EX(close, obh) {
+
+static int get_stations(station **stations) {
   char *file = "big.db";
-
   sqlite3 *db;
-  if (sqlite3_open(file, &db) != SQLITE_OK) {
-    sqlite3_close(db);
-    return;
-  }
-
-  station *stations = NULL;
-  int station_count = read_stations(db, &stations);
+  assert(sqlite3_open(file, &db) == SQLITE_OK);
+  int station_count = read_stations(db, stations);
   sqlite3_close(db);
+  assert(station_count > 0);
+  return station_count;
+}
 
-  if (station_count < 0) {
-    return;
-  }
-
+UBENCH_EX(get_coords, obh_close_loops) {
+  station *stations = NULL;
+  int station_count = get_stations(&stations);
   double *xs = malloc(sizeof(double) * station_count);
   double *ys = malloc(sizeof(double) * station_count);
 
   UBENCH_DO_BENCHMARK() {
-    get_coords(stations, station_count, NULL, xs, ys, true);
+    get_coords(stations, station_count, NULL, xs, ys, COORDS_CLOSE_LOOPS);
   }
 
   free(xs);
   free(ys);
   free(stations);
+}
+
+UBENCH_EX(get_coords, obh_mag_north) {
+  station *stations = NULL;
+  int station_count = get_stations(&stations);
+  double *xs = malloc(sizeof(double) * station_count);
+  double *ys = malloc(sizeof(double) * station_count);
+
+  UBENCH_DO_BENCHMARK() {
+    get_coords(stations, station_count, NULL, xs, ys, COORDS_ADJUST_MAG_NORTH);
+  }
+
+  free(xs);
+  free(ys);
+  free(stations);
+}
+
+UBENCH(igrf, declination) {
+  declination(2018, 12, 8, 40., 40., 0.0);
 }
 
 UBENCH_MAIN();

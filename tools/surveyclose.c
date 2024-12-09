@@ -31,7 +31,7 @@ int main(int argc, char const *argv[]) {
   double *xs = malloc(sizeof(double) * station_count);
   double *ys = malloc(sizeof(double) * station_count);
 
-  get_coords(stations, station_count, NULL, xs, ys, true);
+  get_coords(stations, station_count, NULL, xs, ys, COORDS_LAT_LON | COORDS_CLOSE_LOOPS | COORDS_ADJUST_MAG_NORTH);
 
 
   char *error;

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "igrf.h"
 
 const double EARTH_CIRCUMFERENCE = 4.007516E7;
 
@@ -102,7 +103,7 @@ station *find_via(station *a, station *b) {
 }
 
 void calc_a(station stations[], size_t stations_length, location *datum,
-            double x[], double y[]) {
+            double x[], double y[], double adj_azimuth[]) {
   bzero(x, stations_length * sizeof(double));
   bzero(y, stations_length * sizeof(double));
 
@@ -138,7 +139,8 @@ void calc_a(station stations[], size_t stations_length, location *datum,
         size_t parent_idx = cwd->parent - stations;
         double len =
             calc_distance(cwd->parent->depth, cwd->depth, cwd->distance.length);
-        vec2 dist = decompose_lengths(len, cwd->distance.azimuth);
+        double az_adj = adj_azimuth != NULL ? adj_azimuth[idx] : 0.0;
+        vec2 dist = decompose_lengths(len, cwd->distance.azimuth + az_adj);
         x[idx] = x[parent_idx] - dist.x;
         y[idx] = y[parent_idx] - dist.y;
       }
@@ -280,28 +282,45 @@ location *find_datum(station stations[], size_t length) {
 }
 
 void get_coords(station stations[], size_t length, location *datum, double xs[],
-                double ys[], bool close_loops) {
+                double ys[], int flags) {
   datum = datum ? datum : find_datum(stations, length);
   assert(datum != NULL);
-  calc_a(stations, length, datum, xs, ys);
-  if (close_loops) {
+  calc_a(stations, length, datum, xs, ys, NULL);
+  
+  if (flags & COORDS_ADJUST_MAG_NORTH) {
+    double * adj_az = malloc(sizeof(double) * length);
+    for (int i = 0; i < length; i++) {
+      station *s = &stations[i];
+      if (!s->fixed) {
+        location new = gps_add(datum, xs[i], ys[i]);
+        adj_az[i] = declination(
+          s->date.tm_year+1900, 
+          s->date.tm_mon+1, 
+          s->date.tm_mday,
+          new.lat, 
+          new.lon, 
+          0.0);
+      }
+    }
+    calc_a(stations, length, datum, xs, ys, adj_az);
+    free(adj_az);
+  }
+
+  if (flags & COORDS_CLOSE_LOOPS) {
     close_leastsquare(stations, length, xs, ys);
   }
-}
-void get_locations(station stations[], size_t length, location *datum,
-                   double lon[], double lat[], bool close_loops) {
-  datum = datum ? datum : find_datum(stations, length);
-  assert(datum != NULL);
-  get_coords(stations, length, datum, lon, lat, close_loops);
-  for (int i = 0; i < length; i++) {
-    station *s = &stations[i];
-    if (s->fixed) {
-      lat[i] = s->location.lat;
-      lon[i] = s->location.lon;
-    } else {
-      location new = gps_add(datum, lon[i], lat[i]);
-      lon[i] = new.lon;
-      lat[i] = new.lat;
+
+  if (flags & COORDS_LAT_LON) {
+    for (int i = 0; i < length; i++) {
+      station *s = &stations[i];
+      if (s->fixed) {
+        ys[i] = s->location.lat;
+        xs[i] = s->location.lon;
+      } else {
+        location new = gps_add(datum, xs[i], ys[i]);
+        ys[i] = new.lat;
+        xs[i] = new.lon;
+      }
     }
   }
 }
