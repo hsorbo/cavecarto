@@ -1,5 +1,7 @@
+#define _XOPEN_SOURCE
 #include "surveyfile.h"
 #include <stdlib.h>
+#include <time.h>
 
 static int cmp(const void *a, const void *b) {
   int int_a = *(const int *)a;

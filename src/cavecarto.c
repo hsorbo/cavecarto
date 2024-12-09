@@ -3,8 +3,6 @@
 #include "csparse.h"
 #include "matrix_builder.h"
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "igrf.h"
 
@@ -104,8 +102,8 @@ station *find_via(station *a, station *b) {
 
 void calc_a(station stations[], size_t stations_length, location *datum,
             double x[], double y[], double adj_azimuth[]) {
-  bzero(x, stations_length * sizeof(double));
-  bzero(y, stations_length * sizeof(double));
+  memset(x, 0, stations_length * sizeof(double));
+  memset(y, 0, stations_length * sizeof(double));
 
   station **walk = malloc(sizeof(station *) * 10000);
   for (int i = 0; i < stations_length; i++) {
