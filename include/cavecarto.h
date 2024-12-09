@@ -35,7 +35,13 @@ typedef struct cave {
   size_t stations_count;
 } cave;
 
+enum {
+  COORDS_NONE = (1 << 0),
+  COORDS_LAT_LON = (1 << 1),
+  COORDS_CLOSE_LOOPS = (1 << 2),
+  COORDS_ADJUST_MAG_NORTH = (1 << 3),
+};
+
+/* xs = lon, ys = lat when COORDS_LAT_LON */
 void get_coords(station stations[], size_t length, location *datum, double xs[],
-                double ys[], bool close_loops);
-void get_locations(station stations[], size_t length, location *datum,
-                   double lon[], double lat[], bool close_loops);
+                double ys[], int flags);

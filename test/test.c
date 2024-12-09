@@ -1,6 +1,7 @@
 #include "cavecarto.h"
 #include "matrix_builder.h"
 #include "utest.h"
+#include "igrf.h"
 #include <math.h>
 
 const float GPS_MM = 0.00000001;
@@ -61,7 +62,7 @@ UTEST(simple, bowtie1) {
   s[4].closure = &s[7];
 
   double lon[8], lat[8];
-  get_locations(s, 8, NULL, lon, lat, true);
+  get_coords(s, 8, NULL, lon, lat, COORDS_LAT_LON | COORDS_CLOSE_LOOPS);
 
   ASSERT_NEAR(lat[1], 60.000088782284315, 1e-12);
   ASSERT_NEAR(lon[1], 60.000000851048455, 1e-12);
@@ -85,4 +86,8 @@ UTEST(simple, bowtie1) {
   ASSERT_EQ(lon[7], lon[2]);
 }
 
+UTEST(igrf, declination) {
+  double actual = declination(2018, 12, 8, 40., 40., 0.0);
+  ASSERT_NEAR(actual, 6.162, 1e-3);
+}
 UTEST_MAIN();
