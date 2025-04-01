@@ -87,7 +87,15 @@ UTEST(simple, bowtie1) {
 }
 
 UTEST(igrf, declination) {
+  /*
+  Testdata from ppigrf 
+
+  import ppigrf
+  from datetime import datetime
+  [Be, Bn, Bu] = ppigrf.igrf(lon=40., lat=40., h=0.0, date=datetime(2018, 12, 8))
+  print(ppigrf.get_inclination_declination(Be, Bn, Bu))
+  */
   double actual = declination(2018, 12, 8, 40., 40., 0.0);
-  ASSERT_NEAR(actual, 6.162, 1e-3);
+  ASSERT_NEAR(6.15883078, actual, 1e-3);
 }
 UTEST_MAIN();
