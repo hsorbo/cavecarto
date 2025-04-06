@@ -244,8 +244,10 @@ void close_leastsquare(station stations[], size_t length, double xs[],
     case  1: printf ("amd(S'*S)  ") ; break ;
     case  2: printf ("amd(A'*A)  ") ; break ;
   */
-  assert(cs_cholsol(A, bx, 0) == true);
-  assert(cs_cholsol(A, by, 0) == true);
+  bool solved = cs_cholsol(A, bx, 0);
+  assert(solved == true);
+  solved = cs_cholsol(A, by, 0);
+  assert(solved == true);
 
   for (int i = 0; i < length; i++) {
     station *current = &stations[i];

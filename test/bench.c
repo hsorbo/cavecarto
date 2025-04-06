@@ -9,7 +9,8 @@
 static int get_stations(station **stations) {
   char *file = "big.db";
   sqlite3 *db;
-  assert(sqlite3_open(file, &db) == SQLITE_OK);
+  int result = sqlite3_open(file, &db);
+  assert(result == SQLITE_OK);
   int station_count = read_stations(db, stations);
   sqlite3_close(db);
   assert(station_count > 0);
