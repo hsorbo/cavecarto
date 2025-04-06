@@ -3,3 +3,4 @@ obj/
 tmp/
 .vscode/
 build
+.DS_Store
