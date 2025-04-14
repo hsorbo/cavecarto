@@ -5,7 +5,6 @@ project(surveylib C)
 set(SRC_DIR "src")
 set(INCLUDE_DIR "include")
 set(TEST_DIR "test")
-set(TOOLS_DIR "tools")
 
 # Library sources
 set(SOURCES
