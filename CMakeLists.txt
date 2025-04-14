@@ -22,7 +22,7 @@ set(HEADERS
 # Create the library
 add_library(surveylib ${SOURCES} ${HEADERS})
 target_include_directories(surveylib PUBLIC ${INCLUDE_DIR} PRIVATE ${SRC_DIR})
-target_link_libraries(surveylib PRIVATE SQLite::SQLite3)
+target_link_libraries(surveylib PRIVATE)
 
 # Tests
 add_executable(test_suite ${TEST_DIR}/test.c)
