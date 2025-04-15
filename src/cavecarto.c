@@ -110,9 +110,15 @@ station_result_t calc_a(station stations[], size_t stations_length, location *da
   station **walk = malloc(sizeof(station *) * MAX_LINE_HOP_COUNT);
   for (int i = 0; i < stations_length; i++) {
     station *s = &stations[i];
-    assert(s != NULL);
+    if (s != NULL) {
+      result = STATION_NULL;
+      goto beach;
+    }
     assert(s->parent == NULL || !s->fixed);
-    assert(s->parent != NULL || s->fixed);
+    if(s->parent != NULL || s->fixed) {
+      result = STATION_RELATIVE_MISSING_PARENT;
+      goto beach;
+    }
     if (x[i] != 0. || y[i] != 0.)
       continue;
 
