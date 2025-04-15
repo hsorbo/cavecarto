@@ -21,13 +21,13 @@ set(HEADERS
 # Create the library
 add_library(surveylib ${SOURCES} ${HEADERS})
 target_include_directories(surveylib PUBLIC ${INCLUDE_DIR} PRIVATE ${SRC_DIR})
-target_link_libraries(surveylib PRIVATE)
+target_link_libraries(surveylib PRIVATE m)
 
 # Python bindings
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 add_library(surveylib_py MODULE python/surveylib_py.c)
-target_link_libraries(surveylib_py PRIVATE surveylib Python3::Python)
+target_link_libraries(surveylib_py PRIVATE surveylib Python3::Python m)
 target_include_directories(surveylib_py PRIVATE ${INCLUDE_DIR} ${SRC_DIR})
 set_target_properties(surveylib_py PROPERTIES
     OUTPUT_NAME "_surveylib"
