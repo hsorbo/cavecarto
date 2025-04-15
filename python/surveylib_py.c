@@ -156,17 +156,15 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
         goto error;
     }
 
-    PyObject *xs_list = PyList_New(n);
-    PyObject *ys_list = PyList_New(n);
+    PyObject *coords = PyList_New(n);
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyList_SET_ITEM(xs_list, i, PyFloat_FromDouble(xs[i]));
-        PyList_SET_ITEM(ys_list, i, PyFloat_FromDouble(ys[i]));
+        PyList_SET_ITEM(coords, i, PyTuple_Pack(2, PyFloat_FromDouble(xs[i]), PyFloat_FromDouble(ys[i])));
     }
 
     free(stations); 
     free(xs); 
     free(ys);
-    return PyTuple_Pack(2, xs_list, ys_list);
+    return coords;
 
 error:
     free(stations);
