@@ -139,11 +139,15 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
         case STATION_NO_DATUM:
             PyErr_SetString(PyExc_RuntimeError, "No datum (fixed station) found");
             break;
-            
         case STATION_CYCLE_DETECTED:
             PyErr_SetString(PyExc_RuntimeError, "Cycles in stations");
             break;
-        
+        case STATION_NULL:
+            PyErr_SetString(PyExc_RuntimeError, "Station is NULL");
+            break;
+        case STATION_RELATIVE_MISSING_PARENT:
+            PyErr_SetString(PyExc_RuntimeError, "Relative station missing parent");
+            break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Error computing");
             break;
