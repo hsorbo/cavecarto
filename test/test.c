@@ -61,29 +61,29 @@ UTEST(simple, bowtie1) {
   s[3].closure = &s[7];
   s[4].closure = &s[7];
 
-  double lon[8], lat[8];
-  compute_station_latlon(s, 8, NULL, lon, lat, TRANSFORM_CLOSE_LOOPS);
+  location loc[8];
+  compute_station_latlon(s, 8, NULL, loc, TRANSFORM_CLOSE_LOOPS);
 
-  ASSERT_NEAR(lat[1], 60.000088782284315, 1e-12);
-  ASSERT_NEAR(lon[1], 60.000000851048455, 1e-12);
+  ASSERT_NEAR(loc[1].lat, 60.000088782284315, 1e-12);
+  ASSERT_NEAR(loc[1].lon, 60.000000851048455, 1e-12);
 
-  ASSERT_NEAR(lat[2], 60.000044391142154, 1e-12);
-  ASSERT_NEAR(lon[2], 60.000900001207754, 1e-12);
+  ASSERT_NEAR(loc[2].lat, 60.000044391142154, 1e-12);
+  ASSERT_NEAR(loc[2].lon, 60.000900001207754, 1e-12);
 
-  ASSERT_EQ(lat[3], lat[2]);
-  ASSERT_EQ(lon[3], lon[2]);
+  ASSERT_EQ(loc[3].lat, loc[2].lat);
+  ASSERT_EQ(loc[3].lon, loc[2].lon);
 
-  ASSERT_EQ(lat[4], lat[2]);
-  ASSERT_EQ(lon[4], lon[2]);
+  ASSERT_EQ(loc[4].lat, loc[2].lat);
+  ASSERT_EQ(loc[4].lon, loc[2].lon);
 
-  ASSERT_EQ(lat[5], 60.0);
-  ASSERT_EQ(lon[5], 60.0018);
+  ASSERT_EQ(loc[5].lat, 60.0);
+  ASSERT_EQ(loc[5].lon, 60.0018);
 
-  ASSERT_EQ(lat[6], lat[1]);
-  ASSERT_NEAR(lon[6], 60.001799153782564, 1e-12);
+  ASSERT_EQ(loc[6].lat, loc[1].lat);
+  ASSERT_NEAR(loc[6].lon, 60.001799153782564, 1e-12);
 
-  ASSERT_EQ(lat[7], lat[2]);
-  ASSERT_EQ(lon[7], lon[2]);
+  ASSERT_EQ(loc[7].lat, loc[2].lat);
+  ASSERT_EQ(loc[7].lon, loc[2].lon);
 }
 
 UTEST(igrf, declination) {
