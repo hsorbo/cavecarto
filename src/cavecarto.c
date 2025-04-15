@@ -281,13 +281,20 @@ location *find_datum(station stations[], size_t length) {
   return NULL;
 }
 
-void get_coords(station stations[], size_t length, location *datum, double xs[],
-                double ys[], int flags) {
+static station_result_t get_coords(station stations[], 
+                       size_t length, 
+                       location *datum, 
+                       double xs[],
+                       double ys[], 
+                       transform_flags_t flags,
+                       bool latlon) {
   datum = datum ? datum : find_datum(stations, length);
-  assert(datum != NULL);
+  if (datum == NULL) {
+    return STATION_NO_DATUM;
+  }
   calc_a(stations, length, datum, xs, ys, NULL);
   
-  if (flags & COORDS_ADJUST_MAG_NORTH) {
+  if (flags & TRANSFORM_MAG_NORTH) {
     double * adj_az = malloc(sizeof(double) * length);
     for (int i = 0; i < length; i++) {
       station *s = &stations[i];
@@ -306,11 +313,11 @@ void get_coords(station stations[], size_t length, location *datum, double xs[],
     free(adj_az);
   }
 
-  if (flags & COORDS_CLOSE_LOOPS) {
+  if (flags & TRANSFORM_CLOSE_LOOPS) {
     close_leastsquare(stations, length, xs, ys);
   }
 
-  if (flags & COORDS_LAT_LON) {
+  if (latlon) {
     for (int i = 0; i < length; i++) {
       station *s = &stations[i];
       if (s->fixed) {
@@ -323,4 +330,36 @@ void get_coords(station stations[], size_t length, location *datum, double xs[],
       }
     }
   }
+  return STATION_SUCCESS;
 }
+
+
+station_result_t compute_station_xy(station stations[],
+  size_t count,
+  location *datum,
+  double xs[],
+  double ys[],
+  transform_flags_t flags) {
+    return get_coords(stations, count, datum, xs, ys, flags, false);
+  }
+
+
+/**
+ * Resolves the geographic coordinates (latitude/longitude) of each station.
+ *
+ * Internally uses local XY resolution, then projects results to geodetic space.
+ *
+ * @param stations Array of input stations
+ * @param count Number of stations
+ * @param datum Datum to use as origin and projection center
+ * @param out Output array of `location` (must be at least `count` long)
+ * @param flags Bitmask of `coord_flags_t` (e.g., TRANSFORM_CLOSE_LOOPS, TRANSFORM_ADJUST_MAG_NORTH)
+ */
+station_result_t compute_station_latlon(station stations[],
+  size_t count,
+  location *datum,
+  double lat[],
+  double lon[],
+  transform_flags_t flags) {
+    return get_coords(stations, count, datum, lat, lon, flags, true);
+  }

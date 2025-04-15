@@ -10,7 +10,7 @@ UBENCH_EX(get_coords, obh_close_loops) {
   double *ys = malloc(sizeof(double) * station_count);
 
   UBENCH_DO_BENCHMARK() {
-    get_coords(stations, station_count, NULL, xs, ys, COORDS_CLOSE_LOOPS);
+    compute_station_xy(stations, station_count, NULL, xs, ys, TRANSFORM_CLOSE_LOOPS);
   }
 
   free(xs);
@@ -22,7 +22,7 @@ UBENCH_EX(get_coords, obh_mag_north) {
   double *ys = malloc(sizeof(double) * station_count);
 
   UBENCH_DO_BENCHMARK() {
-    get_coords(stations, station_count, NULL, xs, ys, COORDS_ADJUST_MAG_NORTH);
+    compute_station_xy(stations, station_count, NULL, xs, ys, TRANSFORM_MAG_NORTH);
   }
 
   free(xs);

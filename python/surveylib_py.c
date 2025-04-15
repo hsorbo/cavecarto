@@ -7,8 +7,9 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
     PyObject *stations_list;
     PyObject *datum_dict;
     int flags;
+    int latlon;
 
-    if (!PyArg_ParseTuple(args, "OOi", &stations_list, &datum_dict, &flags))
+    if (!PyArg_ParseTuple(args, "OOii", &stations_list, &datum_dict, &flags, &latlon))
         return NULL;
 
     Py_ssize_t n = PyList_Size(stations_list);
@@ -129,8 +130,23 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
     double *xs = calloc(n, sizeof(double));
     double *ys = calloc(n, sizeof(double));
     if (!xs || !ys) goto error;
-    
-    get_coords(stations, n, datum_ptr, xs, ys, flags);
+    station_result_t res = latlon 
+        ? compute_station_latlon(stations, n, datum_ptr, xs, ys, flags)
+        : compute_station_xy(stations, n, datum_ptr, xs, ys, flags);
+    if (res != STATION_SUCCESS) {
+        switch (res)
+        {
+        case STATION_NO_DATUM:
+            PyErr_SetString(PyExc_RuntimeError, "No datum (fixed station) found");
+            break;
+        
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "Error computing");
+            break;
+        }
+        
+        goto error;
+    }
 
     PyObject *xs_list = PyList_New(n);
     PyObject *ys_list = PyList_New(n);
@@ -139,7 +155,9 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
         PyList_SET_ITEM(ys_list, i, PyFloat_FromDouble(ys[i]));
     }
 
-    free(stations); free(xs); free(ys);
+    free(stations); 
+    free(xs); 
+    free(ys);
     return PyTuple_Pack(2, xs_list, ys_list);
 
 error:

@@ -2,46 +2,90 @@
 #include "stdbool.h"
 #include "time.h"
 
+/*
+ * Absolute geographic location in decimal degrees.
+ */
 typedef struct location {
   double lat;
   double lon;
 } location;
 
+/*
+ * Contains an azimuth (in degrees from North) and a linear 
+ * distance (in meters).
+ */
 typedef struct distance {
   double azimuth;
   double length;
 } distance;
 
+/*
+ * Represents a survey station, either fixed or relative.
+ *
+ * A station can either have absolute coordinates (fixed) or a relative offset from
+ * a parent station (non-fixed). Optionally, it can reference another station to
+ * indicate a loop closure. Date is used when calculating magnetic north.
+ *
+ * - If `fixed` is true, `location` must be used and `parent` should be NULL.
+ * - If `fixed` is false, `distance` and `parent` must be set.
+ * - If `closure` is set, it must refer to a station with no further closure.
+ */
 typedef struct station {
   double depth;
   bool fixed;
-  // Must be set if not fixed, else optional
   struct station *parent;
-  // Must be NULL if fixed, else optional.
-  // It's not possible to close to an already closed station.
-  // (station->closure->closure MUST be NULL)
   struct station *closure;
-  // If fixed use location, else distance
   union {
     location location;
     distance distance;
   };
   struct tm date;
-  void *userData;
+  void *user_data;
 } station;
 
-typedef struct cave {
-  station *stations;
-  size_t stations_count;
-} cave;
+typedef enum {
+  TRANSFORM_NONE         = 0,
+  TRANSFORM_CLOSE_LOOPS  = (1 << 0),
+  TRANSFORM_MAG_NORTH    = (1 << 1),
+} transform_flags_t;
 
-enum {
-  COORDS_NONE = (1 << 0),
-  COORDS_LAT_LON = (1 << 1),
-  COORDS_CLOSE_LOOPS = (1 << 2),
-  COORDS_ADJUST_MAG_NORTH = (1 << 3),
-};
+typedef enum {
+  STATION_SUCCESS = 0,
+  STATION_NO_DATUM,
+  //STATION_ERR_CYCLE_DETECTED,
+} station_result_t;
 
-/* xs = lon, ys = lat when COORDS_LAT_LON */
-void get_coords(station stations[], size_t length, location *datum, double xs[],
-                double ys[], int flags);
+/**
+ * Resolves the 2D Cartesian coordinates (in meters) of each station relative to the datum.
+ *
+ * @param stations Array of input stations
+ * @param count Number of stations
+ * @param datum Datum to use as origin use NULL to auto select first fixed station
+ * @param out Output array of `point` (must be at least `count` long)
+ * @param flags Bitmask of `coord_flags_t` (e.g., TRANSFORM_CLOSE_LOOPS)
+ */
+station_result_t compute_station_xy(station stations[],
+  size_t count,
+  location *datum,
+  double xs[],
+  double ys[],
+  transform_flags_t flags);
+
+
+/**
+ * Resolves the geographic coordinates (latitude/longitude) of each station.
+ *
+ * Internally uses local XY resolution, then projects results to geodetic space.
+ *
+ * @param stations Array of input stations
+ * @param count Number of stations
+ * @param datum Datum to use as origin and projection center
+ * @param out Output array of `location` (must be at least `count` long)
+ * @param flags Bitmask of `coord_flags_t` (e.g., TRANSFORM_CLOSE_LOOPS, TRANSFORM_ADJUST_MAG_NORTH)
+ */
+station_result_t compute_station_latlon(station stations[],
+  size_t count,
+  location *datum,
+  double lat[],
+  double lon[],
+  transform_flags_t flags);

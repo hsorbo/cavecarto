@@ -6,9 +6,8 @@ from enum import Flag, auto
 from . import _surveylib
 
 
-class CoordFlags(Flag):
-    NONE = 1
-    LAT_LON = auto()
+class Transform(Flag):
+    NONE = 0
     CLOSE_LOOPS = auto()
     ADJUST_MAG_NORTH = auto()
 
@@ -55,18 +54,14 @@ class Station:
             raise TypeError("pos must be Fixed or Relative")
         return out
 
-
-def get_coords(
-    stations: List[Station], datum: Optional[Fixed], flags: CoordFlags = CoordFlags.NONE
+def compute_station_latlon(stations: List[Station], datum: Optional[Fixed], flags: Transform = Transform.NONE
 ) -> Tuple[List[float], List[float]]:
-    if not isinstance(flags, CoordFlags):
-        raise TypeError(f"Expected CoordFlags, got {type(flags).__name__}")
-    if not isinstance(stations, list):
-        raise TypeError("stations must be a list of Station objects")
-    station_dicts = []
-    for s in stations:
-        if not isinstance(s, Station):
-            raise TypeError(f"stations is not a Station (got {type(s).__name__})")
-        station_dicts.append(s.to_dict())
+    station_dicts = [s.to_dict() for s in stations]
     datum_dict = datum.to_dict() if datum is not None else None
-    return _surveylib.get_coords(station_dicts, datum_dict, flags.value)
+    return _surveylib.get_coords(station_dicts, datum_dict, flags.value, True)
+
+def compute_station_xy(stations: List[Station], datum: Optional[Fixed], flags: Transform = Transform.NONE
+) -> Tuple[List[float], List[float]]:
+    station_dicts = [s.to_dict() for s in stations]
+    datum_dict = datum.to_dict() if datum is not None else None
+    return _surveylib.get_coords(station_dicts, datum_dict, flags.value, False)

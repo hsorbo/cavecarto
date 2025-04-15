@@ -62,7 +62,7 @@ UTEST(simple, bowtie1) {
   s[4].closure = &s[7];
 
   double lon[8], lat[8];
-  get_coords(s, 8, NULL, lon, lat, COORDS_LAT_LON | COORDS_CLOSE_LOOPS);
+  compute_station_latlon(s, 8, NULL, lon, lat, TRANSFORM_CLOSE_LOOPS);
 
   ASSERT_NEAR(lat[1], 60.000088782284315, 1e-12);
   ASSERT_NEAR(lon[1], 60.000000851048455, 1e-12);
