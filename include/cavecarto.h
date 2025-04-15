@@ -52,7 +52,7 @@ typedef enum {
 typedef enum {
   STATION_SUCCESS = 0,
   STATION_NO_DATUM,
-  //STATION_ERR_CYCLE_DETECTED,
+  STATION_CYCLE_DETECTED,
 } station_result_t;
 
 /**

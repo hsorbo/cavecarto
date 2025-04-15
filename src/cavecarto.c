@@ -5,7 +5,7 @@
 #include <math.h>
 #include <string.h>
 #include "igrf.h"
-
+const size_t MAX_LINE_HOP_COUNT = 10000;
 const double EARTH_CIRCUMFERENCE = 4.007516E7;
 
 typedef struct vec2 {
@@ -100,12 +100,14 @@ station *find_via(station *a, station *b) {
   return NULL;
 }
 
-void calc_a(station stations[], size_t stations_length, location *datum,
+
+station_result_t calc_a(station stations[], size_t stations_length, location *datum,
             double x[], double y[], double adj_azimuth[]) {
+  station_result_t result = STATION_SUCCESS;
   memset(x, 0, stations_length * sizeof(double));
   memset(y, 0, stations_length * sizeof(double));
 
-  station **walk = malloc(sizeof(station *) * 10000);
+  station **walk = malloc(sizeof(station *) * MAX_LINE_HOP_COUNT);
   for (int i = 0; i < stations_length; i++) {
     station *s = &stations[i];
     assert(s != NULL);
@@ -116,6 +118,10 @@ void calc_a(station stations[], size_t stations_length, location *datum,
 
     size_t depth = 0;
     for (station *cur = s; cur != NULL; cur = cur->parent) {
+      if (depth >= MAX_LINE_HOP_COUNT) {
+        result = STATION_CYCLE_DETECTED;
+        goto beach;
+      }
       walk[depth++] = cur;
       if (cur->parent != NULL) {
         size_t idx = cur->parent - stations;
@@ -144,7 +150,9 @@ void calc_a(station stations[], size_t stations_length, location *datum,
       }
     }
   }
+  beach:
   free(walk);
+  return result;
 }
 
 typedef struct start_adj {
@@ -288,11 +296,13 @@ static station_result_t get_coords(station stations[],
                        double ys[], 
                        transform_flags_t flags,
                        bool latlon) {
+  station_result_t result = STATION_SUCCESS;
   datum = datum ? datum : find_datum(stations, length);
   if (datum == NULL) {
     return STATION_NO_DATUM;
   }
-  calc_a(stations, length, datum, xs, ys, NULL);
+  result = calc_a(stations, length, datum, xs, ys, NULL);
+  if (result != STATION_SUCCESS) return result;
   
   if (flags & TRANSFORM_MAG_NORTH) {
     double * adj_az = malloc(sizeof(double) * length);
@@ -309,8 +319,9 @@ static station_result_t get_coords(station stations[],
           0.0);
       }
     }
-    calc_a(stations, length, datum, xs, ys, adj_az);
+    result = calc_a(stations, length, datum, xs, ys, adj_az);
     free(adj_az);
+    if (result != STATION_SUCCESS) return result;
   }
 
   if (flags & TRANSFORM_CLOSE_LOOPS) {
@@ -330,7 +341,7 @@ static station_result_t get_coords(station stations[],
       }
     }
   }
-  return STATION_SUCCESS;
+  return result;
 }
 
 
