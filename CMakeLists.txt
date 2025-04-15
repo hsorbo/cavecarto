@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 project(surveylib C)
 
 # Set project directories
@@ -22,6 +22,19 @@ set(HEADERS
 add_library(surveylib ${SOURCES} ${HEADERS})
 target_include_directories(surveylib PUBLIC ${INCLUDE_DIR} PRIVATE ${SRC_DIR})
 target_link_libraries(surveylib PRIVATE)
+
+# Python bindings
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+
+add_library(surveylib_py MODULE python/surveylib_py.c)
+target_link_libraries(surveylib_py PRIVATE surveylib Python3::Python)
+target_include_directories(surveylib_py PRIVATE ${INCLUDE_DIR} ${SRC_DIR})
+set_target_properties(surveylib_py PROPERTIES
+    OUTPUT_NAME "_surveylib"
+    PREFIX ""  # Don't prefix with lib
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python/surveylib"
+)
+
 
 # Tests
 add_executable(test_suite ${TEST_DIR}/test.c)
