@@ -18,4 +18,4 @@ requires-python = ">=3.7"
 
 [tool.scikit-build]
 wheel.packages = ["python/surveylib"]  # points to your pure Python code
-build-dir = "build"                    # optional: where to build
+build-dir = "python_build"                    # optional: where to build
