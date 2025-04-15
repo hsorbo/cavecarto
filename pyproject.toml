@@ -1,0 +1,21 @@
+[build-system]
+requires = ["scikit-build-core[pyproject]>=0.7.0", "pybind11"]  # pybind11 not used but unblocks some wheels
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "surveylib"
+version = "0.1.0"
+description = "Python bindings for the surveylib C library"
+authors = [{name = "Håvard Sørbø", email = "havard@hsorbo.no"}]
+readme = "README.md"
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: C",
+    "Operating System :: OS Independent"
+]
+requires-python = ">=3.7"
+
+[tool.scikit-build]
+wheel.packages = ["python/surveylib"]  # points to your pure Python code
+build-dir = "build"                    # optional: where to build
