@@ -3,6 +3,8 @@
 ```
 mkdir build && cd build
 cmake ..
+cmake -G Xcode ..
+cmake -DCMAKE_BUILD_TYPE=Release build ..
 make
 
 # test
