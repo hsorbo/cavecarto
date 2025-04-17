@@ -1,6 +1,6 @@
 #pragma once
-#include "stdbool.h"
-#include "time.h"
+#include <stdbool.h>
+#include <time.h>
 
 /*
  * Absolute geographic location in decimal degrees.

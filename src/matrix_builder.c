@@ -20,7 +20,7 @@ void mb_free(matrix_builder *mb) {
 int cmp(const void *a, const void *b) {
   rowdata *aa = (rowdata *)a;
   rowdata *bb = (rowdata *)b;
-  return aa->row - bb->row;
+  return (int)(aa->row - bb->row);
 }
 
 void sort_cols(rowdata *row, size_t length) {
@@ -50,7 +50,7 @@ cs *mb_csc(matrix_builder *builder) {
     num_values += ax->row_count;
   }
 
-  cs *A = cs_spalloc(builder->col_count, builder->col_count, num_values, 1, 0);
+  cs *A = cs_spalloc((int)builder->col_count, (int)builder->col_count, (int)num_values, 1, 0);
   bzero(A->p, sizeof(int) * builder->col_count);
   assert(A != NULL);
   assert(A->x != NULL);
@@ -62,12 +62,12 @@ cs *mb_csc(matrix_builder *builder) {
     for (int k = prev_col; k < col; k++) {
       if (k + 1 > builder->col_count)
         break;
-      A->p[k + 1] = num_values;
+      A->p[k + 1] = (int)num_values;
     }
-    prev_col = col;
+    prev_col = (int)col;
     for (size_t i = 0; i < rowcoll->row_count; i++) {
       rowdata row = rowcoll->rows[i];
-      A->i[num_values] = row.row;
+      A->i[num_values] = (int)row.row;
       A->x[num_values++] = row.val;
     }
   }
