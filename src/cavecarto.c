@@ -8,7 +8,7 @@
 const size_t MAX_LINE_HOP_COUNT = 10000;
 const double EARTH_CIRCUMFERENCE = 4.007516E7;
 
-typedef survey_point vec2;
+typedef cc_point vec2;
 
 vec2 decompose_lengths(double length, double azimuth) {
   double d = (-azimuth) / 360.0 * 2.0 * M_PI;
@@ -29,27 +29,27 @@ double vec3_magnitude(vec3 v) {
   return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-double gps_distance_x(survey_location a, survey_location b) {
+double gps_distance_x(cc_location a, cc_location b) {
   return -((a.lon - b.lon) * EARTH_CIRCUMFERENCE *
            cos(((a.lat + b.lat) / 2.0) / 360.0 * 2.0 * M_PI) / 360.0);
 }
 
-double gps_distance_y(survey_location a, survey_location b) {
+double gps_distance_y(cc_location a, cc_location b) {
   return (a.lat - b.lat) * EARTH_CIRCUMFERENCE / 360.0;
 }
 
-double gps_distance_line(survey_location a, survey_location b) {
+double gps_distance_line(cc_location a, cc_location b) {
   double latdiff = gps_distance_y(a, b);
   double longdiff = (a.lon - b.lon) * EARTH_CIRCUMFERENCE / 360.0 *
                     cos((a.lat / 360.0 * 2.0 * M_PI));
   return sqrt(latdiff * latdiff + longdiff * longdiff);
 }
 
-survey_location gps_add(survey_location *src, double x, double y) {
+cc_location gps_add(cc_location *src, double x, double y) {
   double lat = src->lat - y / EARTH_CIRCUMFERENCE * 360.0;
   double k = lat / 360.0 * 2.0 * M_PI;
   double lon = src->lon + x / EARTH_CIRCUMFERENCE * 360.0 / cos(k);
-  return (survey_location){.lat = lat, .lon = lon};
+  return (cc_location){.lat = lat, .lon = lon};
 }
 
 double calc_distance(double from_depth, double to_depth, double length) {
@@ -60,7 +60,7 @@ double calc_distance(double from_depth, double to_depth, double length) {
   return length_xy;
 }
 
-int hops_root(survey_station *station) {
+int hops_root(cc_station *station) {
   int c = 0;
   while (station->parent != NULL) {
     station = station->parent;
@@ -69,7 +69,7 @@ int hops_root(survey_station *station) {
   return c;
 }
 
-survey_station *find_root(survey_station *station) {
+cc_station *find_root(cc_station *station) {
   while (true) {
     if (station->parent == NULL)
       return station;
@@ -77,7 +77,7 @@ survey_station *find_root(survey_station *station) {
   }
 }
 
-survey_station *find_via(survey_station *a, survey_station *b) {
+cc_station *find_via(cc_station *a, cc_station *b) {
   if (a == b)
     return a;
   int ad = hops_root(a);
@@ -98,17 +98,17 @@ survey_station *find_via(survey_station *a, survey_station *b) {
 }
 
 
-station_result_t calc_a(survey_station stations[], 
+cc_station_result_t calc_a(cc_station stations[], 
                         size_t stations_length, 
-                        survey_location *datum,
+                        cc_location *datum,
                         vec2 out[], 
                         double adj_azimuth[]) {
-  station_result_t result = STATION_SUCCESS;
+  cc_station_result_t result = STATION_SUCCESS;
   memset(out, 0, stations_length * sizeof(vec2));
 
-  survey_station **walk = malloc(sizeof(survey_station *) * MAX_LINE_HOP_COUNT);
+  cc_station **walk = malloc(sizeof(cc_station *) * MAX_LINE_HOP_COUNT);
   for (int i = 0; i < stations_length; i++) {
-    survey_station *s = &stations[i];
+    cc_station *s = &stations[i];
     if (s == NULL) {
       result = STATION_NULL;
       goto beach;
@@ -122,7 +122,7 @@ station_result_t calc_a(survey_station stations[],
       continue;
 
     size_t depth = 0;
-    for (survey_station *cur = s; cur != NULL; cur = cur->parent) {
+    for (cc_station *cur = s; cur != NULL; cur = cur->parent) {
       if (depth >= MAX_LINE_HOP_COUNT) {
         result = STATION_CYCLE_DETECTED;
         goto beach;
@@ -139,7 +139,7 @@ station_result_t calc_a(survey_station stations[],
     }
 
     for (size_t j = depth; j > 0; j--) {
-      survey_station *cwd = walk[j - 1];
+      cc_station *cwd = walk[j - 1];
       size_t idx = cwd - stations;
       if (cwd->fixed) {
         out[idx].x = gps_distance_x(*datum, cwd->location);
@@ -161,17 +161,17 @@ station_result_t calc_a(survey_station stations[],
 }
 
 typedef struct start_adj {
-  survey_station *start_station;
-  survey_station *to_station;
+  cc_station *start_station;
+  cc_station *to_station;
   double weight;
 } start_adj;
 
-void close_leastsquare(survey_station stations[], size_t length, vec2 out[]) {
+void close_leastsquare(cc_station stations[], size_t length, vec2 out[]) {
   ssize_t *adjust_station_idx = malloc(sizeof(ssize_t) * length);
   size_t adj_station_count = 0;
   size_t fix_station_count = 0;
   for (int i = 0; i < length; i++) {
-    survey_station *current = &stations[i];
+    cc_station *current = &stations[i];
     bool adjustable = !current->fixed && current->closure == NULL;
     // this estimation is shady, ... do better
     fix_station_count += current->fixed ? 1 : 0;
@@ -187,10 +187,10 @@ void close_leastsquare(survey_station stations[], size_t length, vec2 out[]) {
   int plen = 0;
 
   for (int i = 0; i < length; i++) {
-    survey_station *current = &stations[i];
+    cc_station *current = &stations[i];
     if (current->fixed)
       continue;
-      survey_station *parent = current->parent;
+      cc_station *parent = current->parent;
     size_t current_idx = current - stations;
     size_t parent_idx = parent - stations;
     vec3 current_pos = {
@@ -262,7 +262,7 @@ void close_leastsquare(survey_station stations[], size_t length, vec2 out[]) {
   assert(solved == true);
 
   for (int i = 0; i < length; i++) {
-    survey_station *current = &stations[i];
+    cc_station *current = &stations[i];
     ssize_t idx = adjust_station_idx[current - stations];
     if (idx != -1) {
       assert(bx[idx] == bx[idx]); // assert not NaN
@@ -271,7 +271,7 @@ void close_leastsquare(survey_station stations[], size_t length, vec2 out[]) {
     }
   }
   for (int i = 0; i < length; i++) {
-    survey_station *s = &stations[i];
+    cc_station *s = &stations[i];
     if (s->closure != NULL) {
       out[i].x = out[s->closure - stations].x;
       out[i].y = out[s->closure - stations].y;
@@ -285,7 +285,7 @@ void close_leastsquare(survey_station stations[], size_t length, vec2 out[]) {
   free(adjust_station_idx);
 }
 
-survey_location *find_datum(survey_station stations[], size_t length) {
+cc_location *find_datum(cc_station stations[], size_t length) {
   for (int i = 0; i < length; i++) {
     if (stations[i].fixed)
       return &stations[i].location;
@@ -293,13 +293,13 @@ survey_location *find_datum(survey_station stations[], size_t length) {
   return NULL;
 }
 
-static station_result_t get_coords(survey_station stations[], 
+static cc_station_result_t get_coords(cc_station stations[], 
                                    size_t length, 
-                                   survey_location *datum, 
-                                   survey_point out[],
-                                   transform_flags_t flags,
+                                   cc_location *datum, 
+                                   cc_point out[],
+                                   cc_transform_flags_t flags,
                                    bool latlon) {
-  station_result_t result = STATION_SUCCESS;
+  cc_station_result_t result = STATION_SUCCESS;
   datum = datum ? datum : find_datum(stations, length);
   if (datum == NULL) {
     return STATION_NO_DATUM;
@@ -310,9 +310,9 @@ static station_result_t get_coords(survey_station stations[],
   if (flags & TRANSFORM_MAG_NORTH) {
     double * adj_az = malloc(sizeof(double) * length);
     for (int i = 0; i < length; i++) {
-      survey_station *s = &stations[i];
+      cc_station *s = &stations[i];
       if (!s->fixed) {
-        survey_location new = gps_add(datum, out[i].x, out[i].y);
+        cc_location new = gps_add(datum, out[i].x, out[i].y);
         adj_az[i] = declination(
           s->date.tm_year+1900, 
           s->date.tm_mon+1, 
@@ -333,12 +333,12 @@ static station_result_t get_coords(survey_station stations[],
 
   if (latlon) {
     for (int i = 0; i < length; i++) {
-      survey_station *s = &stations[i];
+      cc_station *s = &stations[i];
       if (s->fixed) {
         out[i].y = s->location.lat;
         out[i].x = s->location.lon;
       } else {
-        survey_location new = gps_add(datum, out[i].x, out[i].y);
+        cc_location new = gps_add(datum, out[i].x, out[i].y);
         out[i].y = new.lat;
         out[i].x = new.lon;
       }
@@ -348,18 +348,18 @@ static station_result_t get_coords(survey_station stations[],
 }
 
 
-station_result_t compute_station_xy(survey_station stations[],
+cc_station_result_t cc_compute_station_xy(cc_station stations[],
   size_t count,
-  survey_location *datum,
-  survey_point out[],
-  transform_flags_t flags) {
+  cc_location *datum,
+  cc_point out[],
+  cc_transform_flags_t flags) {
     return get_coords(stations, count, datum, out, flags, false);
   }
 
-station_result_t compute_station_latlon(survey_station stations[],
+cc_station_result_t cc_compute_station_latlon(cc_station stations[],
   size_t count,
-  survey_location *datum,
-  survey_location out[],
-  transform_flags_t flags) {
-    return get_coords(stations, count, datum, (survey_point*)out, flags, true);
+  cc_location *datum,
+  cc_location out[],
+  cc_transform_flags_t flags) {
+    return get_coords(stations, count, datum, (cc_point*)out, flags, true);
   }

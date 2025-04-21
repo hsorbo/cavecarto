@@ -6,20 +6,20 @@
 
 
 UBENCH_EX(get_coords, obh_close_loops) {
-  survey_point *pos = malloc(sizeof(survey_point) * station_count);
+  cc_point *pos = malloc(sizeof(cc_point) * station_count);
 
   UBENCH_DO_BENCHMARK() {
-    compute_station_xy(stations, station_count, NULL, pos, TRANSFORM_CLOSE_LOOPS);
+    cc_compute_station_xy(stations, station_count, NULL, pos, TRANSFORM_CLOSE_LOOPS);
   }
 
   free(pos);
 }
 
 UBENCH_EX(get_coords, obh_mag_north) {
-  survey_point *pos = malloc(sizeof(survey_point) * station_count);
+  cc_point *pos = malloc(sizeof(cc_point) * station_count);
 
   UBENCH_DO_BENCHMARK() {
-    compute_station_xy(stations, station_count, NULL, pos, TRANSFORM_MAG_NORTH);
+    cc_compute_station_xy(stations, station_count, NULL, pos, TRANSFORM_MAG_NORTH);
   }
 
   free(pos);

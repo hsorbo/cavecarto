@@ -9,14 +9,14 @@ const float GPS_CM = 0.0000001;
 const float GPS_M = 0.000001;
 const float GPS_KM = 0.01;
 
-void rel(survey_station *s, survey_station *parent, survey_distance d) {
+void rel(cc_station *s, cc_station *parent, cc_distance d) {
   s->fixed = false;
   s->distance = d;
   s->parent = parent;
   s->depth = 0.;
   s->date = (struct tm){0};
 }
-void start(survey_station *s, survey_location l) {
+void start(cc_station *s, cc_location l) {
   s->fixed = true;
   s->location = l;
   s->parent = NULL;
@@ -47,22 +47,22 @@ UTEST(simple, csc) {
 //   }
 // }
 UTEST(simple, bowtie1) {
-  survey_station s[8] = {0};
-  start(&s[0], (survey_location){.lat = 60., .lon = 60.});
-  start(&s[5], (survey_location){.lat = 60., .lon = 60.0018});
-  rel(&s[1], &s[0], (survey_distance){.azimuth = 0., .length = 10.});
-  rel(&s[2], &s[1], (survey_distance){.azimuth = 95., .length = 50.});
-  rel(&s[3], &s[0], (survey_distance){.azimuth = 85., .length = 50.});
-  rel(&s[4], &s[5], (survey_distance){.azimuth = 275., .length = 50.});
-  rel(&s[6], &s[5], (survey_distance){.azimuth = 0., .length = 10.});
-  rel(&s[7], &s[6], (survey_distance){.azimuth = 265., .length = 50.});
+  cc_station s[8] = {0};
+  start(&s[0], (cc_location){.lat = 60., .lon = 60.});
+  start(&s[5], (cc_location){.lat = 60., .lon = 60.0018});
+  rel(&s[1], &s[0], (cc_distance){.azimuth = 0., .length = 10.});
+  rel(&s[2], &s[1], (cc_distance){.azimuth = 95., .length = 50.});
+  rel(&s[3], &s[0], (cc_distance){.azimuth = 85., .length = 50.});
+  rel(&s[4], &s[5], (cc_distance){.azimuth = 275., .length = 50.});
+  rel(&s[6], &s[5], (cc_distance){.azimuth = 0., .length = 10.});
+  rel(&s[7], &s[6], (cc_distance){.azimuth = 265., .length = 50.});
 
   s[2].closure = &s[7];
   s[3].closure = &s[7];
   s[4].closure = &s[7];
 
-  survey_location loc[8];
-  compute_station_latlon(s, 8, NULL, loc, TRANSFORM_CLOSE_LOOPS);
+  cc_location loc[8];
+  cc_compute_station_latlon(s, 8, NULL, loc, TRANSFORM_CLOSE_LOOPS);
 
   ASSERT_NEAR(loc[1].lat, 60.000088782284315, 1e-12);
   ASSERT_NEAR(loc[1].lon, 60.000000851048455, 1e-12);
