@@ -6,7 +6,7 @@
 
 
 UBENCH_EX(get_coords, obh_close_loops) {
-  vec2 *pos = malloc(sizeof(vec2) * station_count);
+  survey_point *pos = malloc(sizeof(survey_point) * station_count);
 
   UBENCH_DO_BENCHMARK() {
     compute_station_xy(stations, station_count, NULL, pos, TRANSFORM_CLOSE_LOOPS);
@@ -16,7 +16,7 @@ UBENCH_EX(get_coords, obh_close_loops) {
 }
 
 UBENCH_EX(get_coords, obh_mag_north) {
-  vec2 *pos = malloc(sizeof(vec2) * station_count);
+  survey_point *pos = malloc(sizeof(survey_point) * station_count);
 
   UBENCH_DO_BENCHMARK() {
     compute_station_xy(stations, station_count, NULL, pos, TRANSFORM_MAG_NORTH);

@@ -2,27 +2,27 @@
 #include <stdbool.h>
 #include <time.h>
 
-typedef struct vec2 {
+typedef struct survey_point {
   double x;
   double y;
-} vec2;
+} survey_point;
 
 /*
  * Absolute geographic location in decimal degrees.
  */
-typedef struct location {
+typedef struct survey_location {
   double lon;
   double lat;
-} location;
+} survey_location;
 
 /*
  * Contains an azimuth (in degrees from North) and a linear 
  * distance (in meters).
  */
-typedef struct distance {
+typedef struct survey_distance {
   double azimuth;
   double length;
-} distance;
+} survey_distance;
 
 /*
  * Represents a survey station, either fixed or relative.
@@ -35,18 +35,18 @@ typedef struct distance {
  * - If `fixed` is false, `distance` and `parent` must be set.
  * - If `closure` is set, it must refer to a station with no further closure.
  */
-typedef struct station {
+typedef struct survey_station {
   double depth;
   bool fixed;
-  struct station *parent;
-  struct station *closure;
+  struct survey_station *parent;
+  struct survey_station *closure;
   union {
-    location location;
-    distance distance;
+    survey_location location;
+    survey_distance distance;
   };
   struct tm date;
   void *user_data;
-} station;
+} survey_station;
 
 typedef enum {
   TRANSFORM_NONE         = 0,
@@ -71,10 +71,10 @@ typedef enum {
  * @param out Output array of `point` (must be at least `count` long)
  * @param flags Bitmask of `coord_flags_t` (e.g., TRANSFORM_CLOSE_LOOPS)
  */
-station_result_t compute_station_xy(station stations[],
+station_result_t compute_station_xy(survey_station stations[],
   size_t count,
-  location *datum,
-  vec2 out[],
+  survey_location *datum,
+  survey_point out[],
   transform_flags_t flags);
 
 
@@ -89,8 +89,8 @@ station_result_t compute_station_xy(station stations[],
  * @param out Output array of `location` (must be at least `count` long)
  * @param flags Bitmask of `coord_flags_t` (e.g., TRANSFORM_CLOSE_LOOPS, TRANSFORM_ADJUST_MAG_NORTH)
  */
-station_result_t compute_station_latlon(station stations[],
+station_result_t compute_station_latlon(survey_station stations[],
   size_t count,
-  location *datum,
-  location out[],
+  survey_location *datum,
+  survey_location out[],
   transform_flags_t flags);

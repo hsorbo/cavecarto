@@ -130,7 +130,7 @@ if __name__ == "__main__":
     print("#include <time.h>")
     print("#include <stdbool.h>")
     print(f"int station_count = {len(stations)};")
-    print(f"station stations[{len(stations)}] = {{")
+    print(f"survey_station stations[{len(stations)}] = {{")
     ids = {}
     for (i, s) in enumerate(stations):
         ids[s.id] = i

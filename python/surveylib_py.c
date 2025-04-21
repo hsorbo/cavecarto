@@ -13,7 +13,7 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
         return NULL;
 
     Py_ssize_t n = PyList_Size(stations_list);
-    station *stations = calloc(n, sizeof(station));
+    survey_station *stations = calloc(n, sizeof(survey_station));
     if (!stations) return PyErr_NoMemory();
 
     for (Py_ssize_t i = 0; i < n; i++) {
@@ -113,8 +113,8 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
         }
     }
 
-    location datum;
-    location *datum_ptr = NULL;
+    survey_location datum;
+    survey_location *datum_ptr = NULL;
 
     if (datum_dict != Py_None) {
         if (!PyDict_Check(datum_dict)) goto error;
@@ -127,10 +127,10 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
     }
     
 
-    vec2 *pos = calloc(n, sizeof(vec2));
+    survey_point *pos = calloc(n, sizeof(survey_point));
     if (!pos) goto error;
     station_result_t res = latlon 
-        ? compute_station_latlon(stations, n, datum_ptr, (location*)pos, flags)
+        ? compute_station_latlon(stations, n, datum_ptr, (survey_location*)pos, flags)
         : compute_station_xy(stations, n, datum_ptr, pos, flags);
     if (res != STATION_SUCCESS) {
         switch (res)
