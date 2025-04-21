@@ -62,7 +62,7 @@ UTEST(simple, bowtie1) {
   s[4].closure = &s[7];
 
   cc_location loc[8];
-  cc_compute_station_latlon(s, 8, NULL, loc, TRANSFORM_CLOSE_LOOPS);
+  cc_compute_station_latlon(s, 8, NULL, loc, CC_TRANSFORM_CLOSE_LOOPS);
 
   ASSERT_NEAR(loc[1].lat, 60.000088782284315, 1e-12);
   ASSERT_NEAR(loc[1].lon, 60.000000851048455, 1e-12);

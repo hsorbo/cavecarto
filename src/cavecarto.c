@@ -103,19 +103,19 @@ cc_station_result_t calc_a(cc_station stations[],
                         cc_location *datum,
                         vec2 out[], 
                         double adj_azimuth[]) {
-  cc_station_result_t result = STATION_SUCCESS;
+  cc_station_result_t result = CC_STATION_SUCCESS;
   memset(out, 0, stations_length * sizeof(vec2));
 
   cc_station **walk = malloc(sizeof(cc_station *) * MAX_LINE_HOP_COUNT);
   for (int i = 0; i < stations_length; i++) {
     cc_station *s = &stations[i];
     if (s == NULL) {
-      result = STATION_NULL;
+      result = CC_STATION_NULL;
       goto beach;
     }
     assert(s->parent == NULL || !s->fixed);
     if(!s->fixed && s->parent == NULL) {
-      result = STATION_RELATIVE_MISSING_PARENT;
+      result = CC_STATION_RELATIVE_MISSING_PARENT;
       goto beach;
     }
     if (out[i].x != 0. || out[i].y != 0.)
@@ -124,7 +124,7 @@ cc_station_result_t calc_a(cc_station stations[],
     size_t depth = 0;
     for (cc_station *cur = s; cur != NULL; cur = cur->parent) {
       if (depth >= MAX_LINE_HOP_COUNT) {
-        result = STATION_CYCLE_DETECTED;
+        result = CC_STATION_CYCLE_DETECTED;
         goto beach;
       }
       walk[depth++] = cur;
@@ -299,15 +299,15 @@ static cc_station_result_t get_coords(cc_station stations[],
                                    cc_point out[],
                                    cc_transform_flags_t flags,
                                    bool latlon) {
-  cc_station_result_t result = STATION_SUCCESS;
+  cc_station_result_t result = CC_STATION_SUCCESS;
   datum = datum ? datum : find_datum(stations, length);
   if (datum == NULL) {
-    return STATION_NO_DATUM;
+    return CC_STATION_NO_DATUM;
   }
   result = calc_a(stations, length, datum, out, NULL);
-  if (result != STATION_SUCCESS) return result;
+  if (result != CC_STATION_SUCCESS) return result;
   
-  if (flags & TRANSFORM_MAG_NORTH) {
+  if (flags & CC_TRANSFORM_MAG_NORTH) {
     double * adj_az = malloc(sizeof(double) * length);
     for (int i = 0; i < length; i++) {
       cc_station *s = &stations[i];
@@ -324,10 +324,10 @@ static cc_station_result_t get_coords(cc_station stations[],
     }
     result = calc_a(stations, length, datum, out, adj_az);
     free(adj_az);
-    if (result != STATION_SUCCESS) return result;
+    if (result != CC_STATION_SUCCESS) return result;
   }
 
-  if (flags & TRANSFORM_CLOSE_LOOPS) {
+  if (flags & CC_TRANSFORM_CLOSE_LOOPS) {
     close_leastsquare(stations, length, out);
   }
 

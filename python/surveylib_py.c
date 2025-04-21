@@ -132,19 +132,19 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
     cc_station_result_t res = latlon 
         ? cc_compute_station_latlon(stations, n, datum_ptr, (cc_location*)pos, flags)
         : cc_compute_station_xy(stations, n, datum_ptr, pos, flags);
-    if (res != STATION_SUCCESS) {
+    if (res != CC_STATION_SUCCESS) {
         switch (res)
         {
-        case STATION_NO_DATUM:
+        case CC_STATION_NO_DATUM:
             PyErr_SetString(PyExc_RuntimeError, "No datum (fixed station) found");
             break;
-        case STATION_CYCLE_DETECTED:
+        case CC_STATION_CYCLE_DETECTED:
             PyErr_SetString(PyExc_RuntimeError, "Cycles in stations");
             break;
-        case STATION_NULL:
+        case CC_STATION_NULL:
             PyErr_SetString(PyExc_RuntimeError, "Station is NULL");
             break;
-        case STATION_RELATIVE_MISSING_PARENT:
+        case CC_STATION_RELATIVE_MISSING_PARENT:
             PyErr_SetString(PyExc_RuntimeError, "Relative station missing parent");
             break;
         default:
