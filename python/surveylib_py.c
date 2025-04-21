@@ -127,12 +127,11 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
     }
     
 
-    double *xs = calloc(n, sizeof(double));
-    double *ys = calloc(n, sizeof(double));
-    if (!xs || !ys) goto error;
+    vec2 *pos = calloc(n, sizeof(vec2));
+    if (!pos) goto error;
     station_result_t res = latlon 
-        ? compute_station_latlon(stations, n, datum_ptr, xs, ys, flags)
-        : compute_station_xy(stations, n, datum_ptr, xs, ys, flags);
+        ? compute_station_latlon(stations, n, datum_ptr, (location*)pos, flags)
+        : compute_station_xy(stations, n, datum_ptr, pos, flags);
     if (res != STATION_SUCCESS) {
         switch (res)
         {
@@ -156,15 +155,22 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
         goto error;
     }
 
-    PyObject *coords = PyList_New(n);
+    PyObject *coord_list = PyList_New(n);
+    if (!coord_list) goto error;
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyList_SET_ITEM(coords, i, PyTuple_Pack(2, PyFloat_FromDouble(xs[i]), PyFloat_FromDouble(ys[i])));
+        PyObject *x = PyFloat_FromDouble(pos[i].x);
+        PyObject *y = PyFloat_FromDouble(pos[i].y);
+        if (!x || !y) goto error;
+        PyObject *pair = PyTuple_Pack(2, x, y);
+        Py_DECREF(x);
+        Py_DECREF(y);
+        if (!pair) goto error;
+        PyList_SET_ITEM(coord_list, i, pair);
     }
 
     free(stations); 
-    free(xs); 
-    free(ys);
-    return coords;
+    free(pos); 
+    return coord_list;
 
 error:
     free(stations);

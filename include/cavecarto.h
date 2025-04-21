@@ -2,12 +2,17 @@
 #include <stdbool.h>
 #include <time.h>
 
+typedef struct vec2 {
+  double x;
+  double y;
+} vec2;
+
 /*
  * Absolute geographic location in decimal degrees.
  */
 typedef struct location {
-  double lat;
   double lon;
+  double lat;
 } location;
 
 /*
@@ -69,8 +74,7 @@ typedef enum {
 station_result_t compute_station_xy(station stations[],
   size_t count,
   location *datum,
-  double xs[],
-  double ys[],
+  vec2 out[],
   transform_flags_t flags);
 
 
@@ -88,6 +92,5 @@ station_result_t compute_station_xy(station stations[],
 station_result_t compute_station_latlon(station stations[],
   size_t count,
   location *datum,
-  double lat[],
-  double lon[],
+  location out[],
   transform_flags_t flags);
