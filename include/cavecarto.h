@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CAVECARTO_H
+#define CAVECARTO_H
+
 #include <stdbool.h>
 #include <time.h>
 
@@ -109,3 +111,5 @@ cc_station_result_t cc_compute_station_latlon(cc_station stations[],
   cc_location *datum,
   cc_location out[],
   cc_transform_flags_t flags);
+
+#endif
