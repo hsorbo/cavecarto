@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
 project(surveylib C)
 
+# Force C99
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
+add_compile_options(-Wall -Werror)
+
 # Set project directories
 set(SRC_DIR "src")
 set(INCLUDE_DIR "include")
