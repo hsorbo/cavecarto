@@ -65,7 +65,7 @@ typedef enum {
   CC_TRANSFORM_NONE        = 0,
   CC_TRANSFORM_CLOSE_LOOPS = (1 << 0), ///< Attempt to close station loops
   CC_TRANSFORM_MAG_NORTH   = (1 << 1), ///< Adjust for magnetic declination
-} CCTansformFlags;
+} CCTransformFlags;
 
 /**
  * Possible outcomes from station coordinate computations.
@@ -85,14 +85,14 @@ typedef enum {
  * @param count Number of stations
  * @param datum Datum to use as origin. Use NULL to auto-select the first fixed station.
  * @param out Output array of `CCPoint` (must have at least `count` elements)
- * @param flags Bitmask of `CCTansformFlags` (e.g., CC_TRANSFORM_CLOSE_LOOPS)
+ * @param flags Bitmask of `CCTransformFlags` (e.g., CC_TRANSFORM_CLOSE_LOOPS)
  * @return Result code indicating success or failure
  */
 CCComputeResult cc_compute_station_xy(CCStation stations[],
   size_t count,
   CCLocation *datum,
   CCPoint out[],
-  CCTansformFlags flags);
+  CCTransformFlags flags);
 
 /**
  * Resolves the geographic coordinates (latitude/longitude) of each station.
@@ -103,13 +103,13 @@ CCComputeResult cc_compute_station_xy(CCStation stations[],
  * @param count Number of stations
  * @param datum Datum to use as origin and projection center
  * @param out Output array of `CCLocation` (must have at least `count` elements)
- * @param flags Bitmask of `CCTansformFlags` (e.g., CC_TRANSFORM_CLOSE_LOOPS, CC_TRANSFORM_MAG_NORTH)
+ * @param flags Bitmask of `CCTransformFlags` (e.g., CC_TRANSFORM_CLOSE_LOOPS, CC_TRANSFORM_MAG_NORTH)
  * @return Result code indicating success or failure
  */
 CCComputeResult cc_compute_station_latlon(CCStation stations[],
   size_t count,
   CCLocation *datum,
   CCLocation out[],
-  CCTansformFlags flags);
+  CCTransformFlags flags);
 
 #endif

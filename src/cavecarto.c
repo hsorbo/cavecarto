@@ -297,7 +297,7 @@ static CCComputeResult get_coords(CCStation stations[],
                                    size_t length, 
                                    CCLocation *datum, 
                                    CCPoint out[],
-                                   CCTansformFlags flags,
+                                   CCTransformFlags flags,
                                    bool latlon) {
   CCComputeResult result = CCStation_SUCCESS;
   datum = datum ? datum : find_datum(stations, length);
@@ -352,7 +352,7 @@ CCComputeResult cc_compute_station_xy(CCStation stations[],
   size_t count,
   CCLocation *datum,
   CCPoint out[],
-  CCTansformFlags flags) {
+  CCTransformFlags flags) {
     return get_coords(stations, count, datum, out, flags, false);
   }
 
@@ -360,6 +360,6 @@ CCComputeResult cc_compute_station_latlon(CCStation stations[],
   size_t count,
   CCLocation *datum,
   CCLocation out[],
-  CCTansformFlags flags) {
+  CCTransformFlags flags) {
     return get_coords(stations, count, datum, (CCPoint*)out, flags, true);
   }
