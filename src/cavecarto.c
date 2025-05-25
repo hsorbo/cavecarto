@@ -5,14 +5,13 @@
 #include <math.h>
 #include <string.h>
 #include "igrf.h"
-const size_t MAX_LINE_HOP_COUNT = 10000;
-const double EARTH_CIRCUMFERENCE = 4.007516E7;
 
-typedef CCPoint vec2;
+static const size_t MAX_LINE_HOP_COUNT = 10000;
+static const double EARTH_CIRCUMFERENCE = 4.007516E7;
 
-vec2 decompose_lengths(double length, double azimuth) {
+static CCPoint decompose_lengths(double length, double azimuth) {
   double d = (-azimuth) / 360.0 * 2.0 * M_PI;
-  return (vec2){.x = length * sin(d), .y = length * cos(d)};
+  return (CCPoint){.x = length * sin(d), .y = length * cos(d)};
 }
 
 typedef struct vec3 {
@@ -21,38 +20,31 @@ typedef struct vec3 {
   double z;
 } vec3;
 
-vec3 vec3_subtract(vec3 a, vec3 b) {
+static vec3 vec3_subtract(vec3 a, vec3 b) {
   return (vec3){.x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z};
 }
 
-double vec3_magnitude(vec3 v) {
+static double vec3_magnitude(vec3 v) {
   return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-double gps_distance_x(CCLocation a, CCLocation b) {
+static double gps_distance_x(CCLocation a, CCLocation b) {
   return -((a.lon - b.lon) * EARTH_CIRCUMFERENCE *
            cos(((a.lat + b.lat) / 2.0) / 360.0 * 2.0 * M_PI) / 360.0);
 }
 
-double gps_distance_y(CCLocation a, CCLocation b) {
+static double gps_distance_y(CCLocation a, CCLocation b) {
   return (a.lat - b.lat) * EARTH_CIRCUMFERENCE / 360.0;
 }
 
-double gps_distance_line(CCLocation a, CCLocation b) {
-  double latdiff = gps_distance_y(a, b);
-  double longdiff = (a.lon - b.lon) * EARTH_CIRCUMFERENCE / 360.0 *
-                    cos((a.lat / 360.0 * 2.0 * M_PI));
-  return sqrt(latdiff * latdiff + longdiff * longdiff);
-}
-
-CCLocation gps_add(CCLocation *src, double x, double y) {
+static CCLocation gps_add(CCLocation *src, double x, double y) {
   double lat = src->lat - y / EARTH_CIRCUMFERENCE * 360.0;
   double k = lat / 360.0 * 2.0 * M_PI;
   double lon = src->lon + x / EARTH_CIRCUMFERENCE * 360.0 / cos(k);
   return (CCLocation){.lat = lat, .lon = lon};
 }
 
-double calc_distance(double from_depth, double to_depth, double length) {
+static double calc_distance(double from_depth, double to_depth, double length) {
   double delta_depth = fabs(from_depth - to_depth);
   double hyp = length <= delta_depth ? length + 0.05 : length;
   double length_xy = sqrt(pow(hyp, 2) - pow(delta_depth, 2));
@@ -60,7 +52,15 @@ double calc_distance(double from_depth, double to_depth, double length) {
   return length_xy;
 }
 
-int hops_root(CCStation *station) {
+/*
+static double gps_distance_line(CCLocation a, CCLocation b) {
+  double latdiff = gps_distance_y(a, b);
+  double longdiff = (a.lon - b.lon) * EARTH_CIRCUMFERENCE / 360.0 *
+                    cos((a.lat / 360.0 * 2.0 * M_PI));
+  return sqrt(latdiff * latdiff + longdiff * longdiff);
+}
+
+static int hops_root(CCStation *station) {
   int c = 0;
   while (station->parent != NULL) {
     station = station->parent;
@@ -69,7 +69,7 @@ int hops_root(CCStation *station) {
   return c;
 }
 
-CCStation *find_root(CCStation *station) {
+static CCStation *find_root(CCStation *station) {
   while (true) {
     if (station->parent == NULL)
       return station;
@@ -77,7 +77,7 @@ CCStation *find_root(CCStation *station) {
   }
 }
 
-CCStation *find_via(CCStation *a, CCStation *b) {
+static CCStation *find_via(CCStation *a, CCStation *b) {
   if (a == b)
     return a;
   int ad = hops_root(a);
@@ -96,15 +96,15 @@ CCStation *find_via(CCStation *a, CCStation *b) {
   }
   return NULL;
 }
+*/
 
-
-CCComputeResult calc_a(CCStation stations[], 
-                        size_t stations_length, 
-                        CCLocation *datum,
-                        vec2 out[], 
-                        double adj_azimuth[]) {
+static CCComputeResult calc_a(CCStation stations[], 
+                              size_t stations_length, 
+                              CCLocation *datum,
+                              CCPoint out[], 
+                              double adj_azimuth[]) {
   CCComputeResult result = CCStation_SUCCESS;
-  memset(out, 0, stations_length * sizeof(vec2));
+  memset(out, 0, stations_length * sizeof(CCPoint));
 
   CCStation **walk = malloc(sizeof(CCStation *) * MAX_LINE_HOP_COUNT);
   for (int i = 0; i < stations_length; i++) {
@@ -149,7 +149,7 @@ CCComputeResult calc_a(CCStation stations[],
         double len =
             calc_distance(cwd->parent->depth, cwd->depth, cwd->distance.length);
         double az_adj = adj_azimuth != NULL ? adj_azimuth[idx] : 0.0;
-        vec2 dist = decompose_lengths(len, cwd->distance.azimuth + az_adj);
+        CCPoint dist = decompose_lengths(len, cwd->distance.azimuth + az_adj);
         out[idx].x = out[parent_idx].x - dist.x;
         out[idx].y = out[parent_idx].y - dist.y;
       }
@@ -166,7 +166,7 @@ typedef struct start_adj {
   double weight;
 } start_adj;
 
-void close_leastsquare(CCStation stations[], size_t length, vec2 out[]) {
+static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]) {
   ssize_t *adjust_station_idx = malloc(sizeof(ssize_t) * length);
   size_t adj_station_count = 0;
   size_t fix_station_count = 0;

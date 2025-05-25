@@ -51,8 +51,8 @@ typedef struct CCStation {
   struct CCStation *parent;  ///< Parent station (if relative)
   struct CCStation *closure; ///< Optional closure target for loop closures
   union {
-    CCLocation location;    ///< Absolute position (if fixed)
-    CCDistance distance;    ///< Relative offset (if not fixed)
+    CCLocation location;     ///< Absolute position (if fixed)
+    CCDistance distance;     ///< Relative offset (if not fixed)
   };
   struct tm date;            ///< Date the station was recorded
   void *user_data;           ///< Optional user data
@@ -74,8 +74,8 @@ typedef enum {
   CCStation_SUCCESS = 0,                  ///< Successful computation
   CCStation_NULL,                         ///< Input station array is NULL
   CCStation_NO_DATUM,                     ///< No valid datum could be determined
-  CCStation_CYCLE_DETECTED,              ///< Circular dependency in station graph
-  CCStation_RELATIVE_MISSING_PARENT,     ///< Relative station is missing a parent
+  CCStation_CYCLE_DETECTED,               ///< Circular dependency in station graph
+  CCStation_RELATIVE_MISSING_PARENT,      ///< Relative station is missing a parent
 } CCComputeResult;
 
 /**
