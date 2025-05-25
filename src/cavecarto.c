@@ -8,7 +8,7 @@
 const size_t MAX_LINE_HOP_COUNT = 10000;
 const double EARTH_CIRCUMFERENCE = 4.007516E7;
 
-typedef cc_point vec2;
+typedef CCPoint vec2;
 
 vec2 decompose_lengths(double length, double azimuth) {
   double d = (-azimuth) / 360.0 * 2.0 * M_PI;
@@ -29,27 +29,27 @@ double vec3_magnitude(vec3 v) {
   return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-double gps_distance_x(cc_location a, cc_location b) {
+double gps_distance_x(CCLocation a, CCLocation b) {
   return -((a.lon - b.lon) * EARTH_CIRCUMFERENCE *
            cos(((a.lat + b.lat) / 2.0) / 360.0 * 2.0 * M_PI) / 360.0);
 }
 
-double gps_distance_y(cc_location a, cc_location b) {
+double gps_distance_y(CCLocation a, CCLocation b) {
   return (a.lat - b.lat) * EARTH_CIRCUMFERENCE / 360.0;
 }
 
-double gps_distance_line(cc_location a, cc_location b) {
+double gps_distance_line(CCLocation a, CCLocation b) {
   double latdiff = gps_distance_y(a, b);
   double longdiff = (a.lon - b.lon) * EARTH_CIRCUMFERENCE / 360.0 *
                     cos((a.lat / 360.0 * 2.0 * M_PI));
   return sqrt(latdiff * latdiff + longdiff * longdiff);
 }
 
-cc_location gps_add(cc_location *src, double x, double y) {
+CCLocation gps_add(CCLocation *src, double x, double y) {
   double lat = src->lat - y / EARTH_CIRCUMFERENCE * 360.0;
   double k = lat / 360.0 * 2.0 * M_PI;
   double lon = src->lon + x / EARTH_CIRCUMFERENCE * 360.0 / cos(k);
-  return (cc_location){.lat = lat, .lon = lon};
+  return (CCLocation){.lat = lat, .lon = lon};
 }
 
 double calc_distance(double from_depth, double to_depth, double length) {
@@ -60,7 +60,7 @@ double calc_distance(double from_depth, double to_depth, double length) {
   return length_xy;
 }
 
-int hops_root(cc_station *station) {
+int hops_root(CCStation *station) {
   int c = 0;
   while (station->parent != NULL) {
     station = station->parent;
@@ -69,7 +69,7 @@ int hops_root(cc_station *station) {
   return c;
 }
 
-cc_station *find_root(cc_station *station) {
+CCStation *find_root(CCStation *station) {
   while (true) {
     if (station->parent == NULL)
       return station;
@@ -77,7 +77,7 @@ cc_station *find_root(cc_station *station) {
   }
 }
 
-cc_station *find_via(cc_station *a, cc_station *b) {
+CCStation *find_via(CCStation *a, CCStation *b) {
   if (a == b)
     return a;
   int ad = hops_root(a);
@@ -98,33 +98,33 @@ cc_station *find_via(cc_station *a, cc_station *b) {
 }
 
 
-cc_station_result_t calc_a(cc_station stations[], 
+CCComputeResult calc_a(CCStation stations[], 
                         size_t stations_length, 
-                        cc_location *datum,
+                        CCLocation *datum,
                         vec2 out[], 
                         double adj_azimuth[]) {
-  cc_station_result_t result = CC_STATION_SUCCESS;
+  CCComputeResult result = CCStation_SUCCESS;
   memset(out, 0, stations_length * sizeof(vec2));
 
-  cc_station **walk = malloc(sizeof(cc_station *) * MAX_LINE_HOP_COUNT);
+  CCStation **walk = malloc(sizeof(CCStation *) * MAX_LINE_HOP_COUNT);
   for (int i = 0; i < stations_length; i++) {
-    cc_station *s = &stations[i];
+    CCStation *s = &stations[i];
     if (s == NULL) {
-      result = CC_STATION_NULL;
+      result = CCStation_NULL;
       goto beach;
     }
     assert(s->parent == NULL || !s->fixed);
     if(!s->fixed && s->parent == NULL) {
-      result = CC_STATION_RELATIVE_MISSING_PARENT;
+      result = CCStation_RELATIVE_MISSING_PARENT;
       goto beach;
     }
     if (out[i].x != 0. || out[i].y != 0.)
       continue;
 
     size_t depth = 0;
-    for (cc_station *cur = s; cur != NULL; cur = cur->parent) {
+    for (CCStation *cur = s; cur != NULL; cur = cur->parent) {
       if (depth >= MAX_LINE_HOP_COUNT) {
-        result = CC_STATION_CYCLE_DETECTED;
+        result = CCStation_CYCLE_DETECTED;
         goto beach;
       }
       walk[depth++] = cur;
@@ -139,7 +139,7 @@ cc_station_result_t calc_a(cc_station stations[],
     }
 
     for (size_t j = depth; j > 0; j--) {
-      cc_station *cwd = walk[j - 1];
+      CCStation *cwd = walk[j - 1];
       size_t idx = cwd - stations;
       if (cwd->fixed) {
         out[idx].x = gps_distance_x(*datum, cwd->location);
@@ -161,17 +161,17 @@ cc_station_result_t calc_a(cc_station stations[],
 }
 
 typedef struct start_adj {
-  cc_station *start_station;
-  cc_station *to_station;
+  CCStation *start_station;
+  CCStation *to_station;
   double weight;
 } start_adj;
 
-void close_leastsquare(cc_station stations[], size_t length, vec2 out[]) {
+void close_leastsquare(CCStation stations[], size_t length, vec2 out[]) {
   ssize_t *adjust_station_idx = malloc(sizeof(ssize_t) * length);
   size_t adj_station_count = 0;
   size_t fix_station_count = 0;
   for (int i = 0; i < length; i++) {
-    cc_station *current = &stations[i];
+    CCStation *current = &stations[i];
     bool adjustable = !current->fixed && current->closure == NULL;
     // this estimation is shady, ... do better
     fix_station_count += current->fixed ? 1 : 0;
@@ -187,10 +187,10 @@ void close_leastsquare(cc_station stations[], size_t length, vec2 out[]) {
   int plen = 0;
 
   for (int i = 0; i < length; i++) {
-    cc_station *current = &stations[i];
+    CCStation *current = &stations[i];
     if (current->fixed)
       continue;
-      cc_station *parent = current->parent;
+      CCStation *parent = current->parent;
     size_t current_idx = current - stations;
     size_t parent_idx = parent - stations;
     vec3 current_pos = {
@@ -262,7 +262,7 @@ void close_leastsquare(cc_station stations[], size_t length, vec2 out[]) {
   assert(solved == true);
 
   for (int i = 0; i < length; i++) {
-    cc_station *current = &stations[i];
+    CCStation *current = &stations[i];
     ssize_t idx = adjust_station_idx[current - stations];
     if (idx != -1) {
       assert(bx[idx] == bx[idx]); // assert not NaN
@@ -271,7 +271,7 @@ void close_leastsquare(cc_station stations[], size_t length, vec2 out[]) {
     }
   }
   for (int i = 0; i < length; i++) {
-    cc_station *s = &stations[i];
+    CCStation *s = &stations[i];
     if (s->closure != NULL) {
       out[i].x = out[s->closure - stations].x;
       out[i].y = out[s->closure - stations].y;
@@ -285,7 +285,7 @@ void close_leastsquare(cc_station stations[], size_t length, vec2 out[]) {
   free(adjust_station_idx);
 }
 
-cc_location *find_datum(cc_station stations[], size_t length) {
+CCLocation *find_datum(CCStation stations[], size_t length) {
   for (int i = 0; i < length; i++) {
     if (stations[i].fixed)
       return &stations[i].location;
@@ -293,26 +293,26 @@ cc_location *find_datum(cc_station stations[], size_t length) {
   return NULL;
 }
 
-static cc_station_result_t get_coords(cc_station stations[], 
+static CCComputeResult get_coords(CCStation stations[], 
                                    size_t length, 
-                                   cc_location *datum, 
-                                   cc_point out[],
-                                   cc_transform_flags_t flags,
+                                   CCLocation *datum, 
+                                   CCPoint out[],
+                                   CCTansformFlags flags,
                                    bool latlon) {
-  cc_station_result_t result = CC_STATION_SUCCESS;
+  CCComputeResult result = CCStation_SUCCESS;
   datum = datum ? datum : find_datum(stations, length);
   if (datum == NULL) {
-    return CC_STATION_NO_DATUM;
+    return CCStation_NO_DATUM;
   }
   result = calc_a(stations, length, datum, out, NULL);
-  if (result != CC_STATION_SUCCESS) return result;
+  if (result != CCStation_SUCCESS) return result;
   
   if (flags & CC_TRANSFORM_MAG_NORTH) {
     double * adj_az = malloc(sizeof(double) * length);
     for (int i = 0; i < length; i++) {
-      cc_station *s = &stations[i];
+      CCStation *s = &stations[i];
       if (!s->fixed) {
-        cc_location new = gps_add(datum, out[i].x, out[i].y);
+        CCLocation new = gps_add(datum, out[i].x, out[i].y);
         adj_az[i] = declination(
           s->date.tm_year+1900, 
           s->date.tm_mon+1, 
@@ -324,7 +324,7 @@ static cc_station_result_t get_coords(cc_station stations[],
     }
     result = calc_a(stations, length, datum, out, adj_az);
     free(adj_az);
-    if (result != CC_STATION_SUCCESS) return result;
+    if (result != CCStation_SUCCESS) return result;
   }
 
   if (flags & CC_TRANSFORM_CLOSE_LOOPS) {
@@ -333,12 +333,12 @@ static cc_station_result_t get_coords(cc_station stations[],
 
   if (latlon) {
     for (int i = 0; i < length; i++) {
-      cc_station *s = &stations[i];
+      CCStation *s = &stations[i];
       if (s->fixed) {
         out[i].y = s->location.lat;
         out[i].x = s->location.lon;
       } else {
-        cc_location new = gps_add(datum, out[i].x, out[i].y);
+        CCLocation new = gps_add(datum, out[i].x, out[i].y);
         out[i].y = new.lat;
         out[i].x = new.lon;
       }
@@ -348,18 +348,18 @@ static cc_station_result_t get_coords(cc_station stations[],
 }
 
 
-cc_station_result_t cc_compute_station_xy(cc_station stations[],
+CCComputeResult cc_compute_station_xy(CCStation stations[],
   size_t count,
-  cc_location *datum,
-  cc_point out[],
-  cc_transform_flags_t flags) {
+  CCLocation *datum,
+  CCPoint out[],
+  CCTansformFlags flags) {
     return get_coords(stations, count, datum, out, flags, false);
   }
 
-cc_station_result_t cc_compute_station_latlon(cc_station stations[],
+CCComputeResult cc_compute_station_latlon(CCStation stations[],
   size_t count,
-  cc_location *datum,
-  cc_location out[],
-  cc_transform_flags_t flags) {
-    return get_coords(stations, count, datum, (cc_point*)out, flags, true);
+  CCLocation *datum,
+  CCLocation out[],
+  CCTansformFlags flags) {
+    return get_coords(stations, count, datum, (CCPoint*)out, flags, true);
   }

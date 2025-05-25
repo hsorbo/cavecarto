@@ -9,18 +9,18 @@
  *
  * Used for local map coordinates after projection.
  */
-typedef struct cc_point {
+typedef struct CCPoint {
   double x; ///< X coordinate in meters (East)
   double y; ///< Y coordinate in meters (North)
-} cc_point;
+} CCPoint;
 
 /**
  * Represents an absolute geographic location in decimal degrees.
  */
-typedef struct cc_location {
+typedef struct CCLocation {
   double lon; ///< Longitude in decimal degrees
   double lat; ///< Latitude in decimal degrees
-} cc_location;
+} CCLocation;
 
 /**
  * Represents a distance and direction from another point.
@@ -28,10 +28,10 @@ typedef struct cc_location {
  * Azimuth is in degrees from geographic North.
  * Length is in meters.
  */
-typedef struct cc_distance {
+typedef struct CCDistance {
   double azimuth; ///< Azimuth in degrees from North
   double length;  ///< Distance in meters
-} cc_distance;
+} CCDistance;
 
 /**
  * Represents a survey station, either fixed or relative.
@@ -45,18 +45,18 @@ typedef struct cc_distance {
  * - If `fixed` is false, `distance` and `parent` must be set.
  * - If `closure` is set, it must refer to a station with no further closure.
  */
-typedef struct cc_station {
+typedef struct CCStation {
   double depth;              ///< Depth in meters (msw)
   bool fixed;                ///< Whether the station has an absolute location
-  struct cc_station *parent;  ///< Parent station (if relative)
-  struct cc_station *closure; ///< Optional closure target for loop closures
+  struct CCStation *parent;  ///< Parent station (if relative)
+  struct CCStation *closure; ///< Optional closure target for loop closures
   union {
-    cc_location location;    ///< Absolute position (if fixed)
-    cc_distance distance;    ///< Relative offset (if not fixed)
+    CCLocation location;    ///< Absolute position (if fixed)
+    CCDistance distance;    ///< Relative offset (if not fixed)
   };
   struct tm date;            ///< Date the station was recorded
   void *user_data;           ///< Optional user data
-} cc_station;
+} CCStation;
 
 /**
  * Flags controlling coordinate transformation behavior.
@@ -65,18 +65,18 @@ typedef enum {
   CC_TRANSFORM_NONE        = 0,
   CC_TRANSFORM_CLOSE_LOOPS = (1 << 0), ///< Attempt to close station loops
   CC_TRANSFORM_MAG_NORTH   = (1 << 1), ///< Adjust for magnetic declination
-} cc_transform_flags_t;
+} CCTansformFlags;
 
 /**
  * Possible outcomes from station coordinate computations.
  */
 typedef enum {
-  CC_STATION_SUCCESS = 0,                  ///< Successful computation
-  CC_STATION_NULL,                         ///< Input station array is NULL
-  CC_STATION_NO_DATUM,                     ///< No valid datum could be determined
-  CC_STATION_CYCLE_DETECTED,              ///< Circular dependency in station graph
-  CC_STATION_RELATIVE_MISSING_PARENT,     ///< Relative station is missing a parent
-} cc_station_result_t;
+  CCStation_SUCCESS = 0,                  ///< Successful computation
+  CCStation_NULL,                         ///< Input station array is NULL
+  CCStation_NO_DATUM,                     ///< No valid datum could be determined
+  CCStation_CYCLE_DETECTED,              ///< Circular dependency in station graph
+  CCStation_RELATIVE_MISSING_PARENT,     ///< Relative station is missing a parent
+} CCComputeResult;
 
 /**
  * Resolves the 2D Cartesian coordinates (in meters) of each station relative to the datum.
@@ -84,15 +84,15 @@ typedef enum {
  * @param stations Array of input stations
  * @param count Number of stations
  * @param datum Datum to use as origin. Use NULL to auto-select the first fixed station.
- * @param out Output array of `cc_point` (must have at least `count` elements)
- * @param flags Bitmask of `cc_transform_flags_t` (e.g., CC_TRANSFORM_CLOSE_LOOPS)
+ * @param out Output array of `CCPoint` (must have at least `count` elements)
+ * @param flags Bitmask of `CCTansformFlags` (e.g., CC_TRANSFORM_CLOSE_LOOPS)
  * @return Result code indicating success or failure
  */
-cc_station_result_t cc_compute_station_xy(cc_station stations[],
+CCComputeResult cc_compute_station_xy(CCStation stations[],
   size_t count,
-  cc_location *datum,
-  cc_point out[],
-  cc_transform_flags_t flags);
+  CCLocation *datum,
+  CCPoint out[],
+  CCTansformFlags flags);
 
 /**
  * Resolves the geographic coordinates (latitude/longitude) of each station.
@@ -102,14 +102,14 @@ cc_station_result_t cc_compute_station_xy(cc_station stations[],
  * @param stations Array of input stations
  * @param count Number of stations
  * @param datum Datum to use as origin and projection center
- * @param out Output array of `cc_location` (must have at least `count` elements)
- * @param flags Bitmask of `cc_transform_flags_t` (e.g., CC_TRANSFORM_CLOSE_LOOPS, CC_TRANSFORM_MAG_NORTH)
+ * @param out Output array of `CCLocation` (must have at least `count` elements)
+ * @param flags Bitmask of `CCTansformFlags` (e.g., CC_TRANSFORM_CLOSE_LOOPS, CC_TRANSFORM_MAG_NORTH)
  * @return Result code indicating success or failure
  */
-cc_station_result_t cc_compute_station_latlon(cc_station stations[],
+CCComputeResult cc_compute_station_latlon(CCStation stations[],
   size_t count,
-  cc_location *datum,
-  cc_location out[],
-  cc_transform_flags_t flags);
+  CCLocation *datum,
+  CCLocation out[],
+  CCTansformFlags flags);
 
 #endif

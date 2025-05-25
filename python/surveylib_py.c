@@ -13,7 +13,7 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
         return NULL;
 
     Py_ssize_t n = PyList_Size(stations_list);
-    cc_station *stations = calloc(n, sizeof(cc_station));
+    CCStation *stations = calloc(n, sizeof(CCStation));
     if (!stations) return PyErr_NoMemory();
 
     for (Py_ssize_t i = 0; i < n; i++) {
@@ -113,8 +113,8 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
         }
     }
 
-    cc_location datum;
-    cc_location *datum_ptr = NULL;
+    CCLocation datum;
+    CCLocation *datum_ptr = NULL;
 
     if (datum_dict != Py_None) {
         if (!PyDict_Check(datum_dict)) goto error;
@@ -127,24 +127,24 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
     }
     
 
-    cc_point *pos = calloc(n, sizeof(cc_point));
+    CCPoint *pos = calloc(n, sizeof(CCPoint));
     if (!pos) goto error;
-    cc_station_result_t res = latlon 
-        ? cc_compute_station_latlon(stations, n, datum_ptr, (cc_location*)pos, flags)
+    CCComputeResult res = latlon 
+        ? cc_compute_station_latlon(stations, n, datum_ptr, (CCLocation*)pos, flags)
         : cc_compute_station_xy(stations, n, datum_ptr, pos, flags);
-    if (res != CC_STATION_SUCCESS) {
+    if (res != CCStation_SUCCESS) {
         switch (res)
         {
-        case CC_STATION_NO_DATUM:
+        case CCStation_NO_DATUM:
             PyErr_SetString(PyExc_RuntimeError, "No datum (fixed station) found");
             break;
-        case CC_STATION_CYCLE_DETECTED:
+        case CCStation_CYCLE_DETECTED:
             PyErr_SetString(PyExc_RuntimeError, "Cycles in stations");
             break;
-        case CC_STATION_NULL:
+        case CCStation_NULL:
             PyErr_SetString(PyExc_RuntimeError, "Station is NULL");
             break;
-        case CC_STATION_RELATIVE_MISSING_PARENT:
+        case CCStation_RELATIVE_MISSING_PARENT:
             PyErr_SetString(PyExc_RuntimeError, "Relative station missing parent");
             break;
         default:
