@@ -188,9 +188,10 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
 
   for (int i = 0; i < length; i++) {
     CCStation *current = &stations[i];
-    if (current->fixed)
+    if (current->fixed) {
       continue;
-      CCStation *parent = current->parent;
+    }
+    CCStation *parent = current->parent;
     size_t current_idx = current - stations;
     size_t parent_idx = parent - stations;
     vec3 current_pos = {
