@@ -8,7 +8,7 @@ matrix_builder *mb_init(size_t size) {
   matrix_builder *a = malloc(sizeof(matrix_builder));
   a->cols = malloc(sizeof(column_info) * size);
   a->col_count = size;
-  bzero(a->cols, sizeof(column_info) * size);
+  memset(a->cols, 0, sizeof(column_info) * size);
   return a;
 }
 
@@ -51,7 +51,7 @@ cs *mb_csc(matrix_builder *builder) {
   }
 
   cs *A = cs_spalloc((int)builder->col_count, (int)builder->col_count, (int)num_values, 1, 0);
-  bzero(A->p, sizeof(int) * builder->col_count);
+  memset(A->p, 0, sizeof(int) * builder->col_count);
   assert(A != NULL);
   assert(A->x != NULL);
 
