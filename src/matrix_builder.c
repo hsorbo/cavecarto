@@ -42,23 +42,30 @@ void mb_update(matrix_builder *builder, size_t col, size_t row, double inc) {
   assert(false);
 }
 
-cs *mb_csc(matrix_builder *builder) {
+size_t mb_value_count(matrix_builder *builder) {
   size_t num_values = 0;
   for (int x = 0; x < builder->col_count; x++) {
-    column_info *ax = &builder->cols[x];
-    sort_cols(ax->rows, ax->row_count);
-    num_values += ax->row_count;
+    num_values += builder->cols[x].row_count;
   }
+  return num_values;
+}
 
-  cs *A = cs_spalloc((int)builder->col_count, (int)builder->col_count, (int)num_values, 1, 0);
+cs *mb_csc(matrix_builder *builder) {
+  cs *A = cs_spalloc(
+    (int)builder->col_count,
+    (int)builder->col_count,
+    (int)mb_value_count(builder),
+    1,
+    0);
   memset(A->p, 0, sizeof(int) * builder->col_count);
   assert(A != NULL);
   assert(A->x != NULL);
 
-  num_values = 0;
+  size_t num_values = 0;
   int prev_col = -1;
   for (size_t col = 0; col < builder->col_count; col++) {
     column_info *rowcoll = &builder->cols[col];
+    sort_cols(rowcoll->rows, rowcoll->row_count);
     for (int k = prev_col; k < col; k++) {
       if (k + 1 > builder->col_count)
         break;
