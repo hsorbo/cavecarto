@@ -35,9 +35,48 @@ UTEST(simple, csc) {
   mb_update(a, 4, 4, 2.0); // [0, 0, 0, 0, 0]
   mb_update(a, 3, 6, 9.0); // [0, 0, 0, 9, 0]
   cs *A = mb_csc(a);
-  int p[] = {0, 1, 1, 4, 6, 7};
-  for (int i = 0; i < 6; i++) {
-    ASSERT_EQ(A->p[i], p[i]);
+  
+  int indptr[] = {0, 1, 1, 4, 6, 7};
+  for (int i = 0; i < sizeof(indptr) / sizeof(indptr[0]); i++) {
+    ASSERT_EQ(A->p[i], indptr[i]);
+  }
+  
+  int indices[] = {0, 0, 1, 4, 4, 6, 4};
+  for (int i = 0; i < sizeof(indices) / sizeof(indices[0]); i++) {
+    ASSERT_EQ(A->i[i], indices[i]);
+  }
+
+  double data[] = {8.0, 2.0, 5.0, 7.0, 1.0, 9.0, 2.0};
+  for (int i = 0; i < sizeof(data) / sizeof(data[0]); i++) {
+    ASSERT_EQ(A->x[i], data[i]);
+  }
+}
+
+UTEST(simple, csc_scattered) {
+  // Same as csc but build order is randomized
+  matrix_builder *a = mb_init(8);
+  mb_update(a, 3, 6, 9.0);
+  mb_update(a, 2, 4, 7.0);
+  mb_update(a, 0, 0, 8.0);
+  mb_update(a, 4, 4, 2.0);
+  mb_update(a, 2, 0, 2.0);
+  mb_update(a, 2, 1, 5.0);
+  mb_update(a, 3, 4, 1.0);
+  cs *A = mb_csc(a);
+  
+  int indptr[] = {0, 1, 1, 4, 6, 7};
+  for (int i = 0; i < sizeof(indptr) / sizeof(indptr[0]); i++) {
+    ASSERT_EQ(A->p[i], indptr[i]);
+  }
+  
+  int indices[] = {0, 0, 1, 4, 4, 6, 4};
+  for (int i = 0; i < sizeof(indices) / sizeof(indices[0]); i++) {
+    ASSERT_EQ(A->i[i], indices[i]);
+  }
+
+  double data[] = {8.0, 2.0, 5.0, 7.0, 1.0, 9.0, 2.0};
+  for (int i = 0; i < sizeof(data) / sizeof(data[0]); i++) {
+    ASSERT_EQ(A->x[i], data[i]);
   }
 }
 
