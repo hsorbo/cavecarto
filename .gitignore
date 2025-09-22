@@ -3,5 +3,6 @@ obj/
 tmp/
 .vscode/
 build
+.build
 python_build
 .DS_Store
