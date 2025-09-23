@@ -2,9 +2,6 @@
 #define _CS_H
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef MATLAB_MEX_FILE
-#include "mex.h"
-#endif
 #define CS_VER 1 /* CSparse Version 1.2.0 */
 #define CS_SUBVER 2
 #define CS_SUBSUB 0

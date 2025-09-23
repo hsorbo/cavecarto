@@ -1,7 +1,6 @@
 #include "matrix_builder.h"
 #include "assert.h"
-#include "cavecarto.h"
-#include <math.h>
+#include "stdbool.h"
 #include <string.h>
 
 matrix_builder *mb_init(size_t size) {

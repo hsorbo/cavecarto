@@ -52,52 +52,6 @@ static double calc_distance(double from_depth, double to_depth, double length) {
   return length_xy;
 }
 
-/*
-static double gps_distance_line(CCLocation a, CCLocation b) {
-  double latdiff = gps_distance_y(a, b);
-  double longdiff = (a.lon - b.lon) * EARTH_CIRCUMFERENCE / 360.0 *
-                    cos((a.lat / 360.0 * 2.0 * M_PI));
-  return sqrt(latdiff * latdiff + longdiff * longdiff);
-}
-
-static int hops_root(CCStation *station) {
-  int c = 0;
-  while (station->parent != NULL) {
-    station = station->parent;
-    c++;
-  }
-  return c;
-}
-
-static CCStation *find_root(CCStation *station) {
-  while (true) {
-    if (station->parent == NULL)
-      return station;
-    station = station->parent;
-  }
-}
-
-static CCStation *find_via(CCStation *a, CCStation *b) {
-  if (a == b)
-    return a;
-  int ad = hops_root(a);
-  int bd = hops_root(a);
-  while (ad + bd > 0) {
-    if (ad >= bd) {
-      a = a->parent;
-      ad--;
-    }
-    if (ad <= bd) {
-      b = b->parent;
-      bd--;
-    }
-    if (a == b)
-      return a;
-  }
-  return NULL;
-}
-*/
-
 static CCComputeResult calc_a(CCStation stations[], 
                               size_t stations_length, 
                               CCLocation *datum,
