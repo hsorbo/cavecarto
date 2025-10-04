@@ -10,18 +10,11 @@ const float GPS_M = 0.000001;
 const float GPS_KM = 0.01;
 
 void rel(CCStation *s, CCStation *parent, CCDistance d) {
-  s->fixed = false;
-  s->distance = d;
-  s->parent = parent;
-  s->depth = 0.;
-  s->date = (struct tm){0};
+  cc_station_init_relative(s, parent, NULL, d, 0., (struct tm){0}, NULL);
 }
+
 void start(CCStation *s, CCLocation l) {
-  s->fixed = true;
-  s->location = l;
-  s->parent = NULL;
-  s->depth = 0.;
-  s->date = (struct tm){0};
+  cc_station_init_fixed(s, NULL, l, 0., (struct tm){0}, NULL);
 }
 
 UTEST(simple, csc) {

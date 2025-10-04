@@ -28,7 +28,7 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
             PyErr_SetString(PyExc_TypeError, "'depth' must be a float");
             goto error;
         }
-        stations[i].depth = PyFloat_AsDouble(depth_obj);
+        double depth = PyFloat_AsDouble(depth_obj);
 
         PyObject *date_obj = PyDict_GetItemString(entry, "date");
 
@@ -37,29 +37,33 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
             goto error;
         }
 
-        stations[i].date.tm_year = PyDateTime_GET_YEAR(date_obj) - 1900;
-        stations[i].date.tm_mon  = PyDateTime_GET_MONTH(date_obj) - 1;
-        stations[i].date.tm_mday = PyDateTime_GET_DAY(date_obj);
-        stations[i].date.tm_hour = PyDateTime_DATE_GET_HOUR(date_obj);
-        stations[i].date.tm_min  = PyDateTime_DATE_GET_MINUTE(date_obj);
-        stations[i].date.tm_sec  = PyDateTime_DATE_GET_SECOND(date_obj);
-        stations[i].date.tm_isdst = -1; // let C figure it out
+        struct tm date;
+        date.tm_year = PyDateTime_GET_YEAR(date_obj) - 1900;
+        date.tm_mon  = PyDateTime_GET_MONTH(date_obj) - 1;
+        date.tm_mday = PyDateTime_GET_DAY(date_obj);
+        date.tm_hour = PyDateTime_DATE_GET_HOUR(date_obj);
+        date.tm_min  = PyDateTime_DATE_GET_MINUTE(date_obj);
+        date.tm_sec  = PyDateTime_DATE_GET_SECOND(date_obj);
+        date.tm_isdst = -1; // let C figure it out
+
 
         PyObject *location_obj = PyDict_GetItemString(entry, "location");
         PyObject *distance_obj = PyDict_GetItemString(entry, "distance");
 
         if (location_obj && PyDict_Check(location_obj)) {
-            stations[i].fixed = true;
             PyObject *lat = PyDict_GetItemString(location_obj, "lat");
             PyObject *lon = PyDict_GetItemString(location_obj, "lon");
             if (!lat || !lon) {
                 PyErr_SetString(PyExc_ValueError, "lat/lon must be set");
                 goto error;
             }
-            stations[i].location.lat = PyFloat_AsDouble(lat);
-            stations[i].location.lon = PyFloat_AsDouble(lon);
+            CCLocation location = {
+                .lat = PyFloat_AsDouble(lat),
+                .lon = PyFloat_AsDouble(lon)
+            };
+
+            cc_station_init_fixed(&stations[i], NULL, location, depth, date, NULL);
         } else if (distance_obj && PyDict_Check(distance_obj)) {
-            stations[i].fixed = false;
             
             PyObject *parent_index_str = PyDict_GetItemString(distance_obj, "parent_index");
             if (!parent_index_str) {
@@ -75,9 +79,8 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
                 PyErr_SetString(PyExc_ValueError, "'parent_index' out of bounds");
                 goto error;
             }
-            stations[i].parent = stations + parent_index;
-
-
+            
+            CCStation *closure = NULL;
             PyObject *closed_index_str = PyDict_GetItemString(distance_obj, "closed_index");
             if (closed_index_str && closed_index_str != Py_None) {
                 if (!PyLong_Check(closed_index_str)) {
@@ -89,24 +92,28 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
                     PyErr_SetString(PyExc_ValueError, "'closed_index' out of bounds");
                     goto error;
                 }
-                stations[i].closure = stations + closed_index;
+                closure = stations + closed_index;
             }
-
-
 
             PyObject *az = PyDict_GetItemString(distance_obj, "azimuth");
             if(!az) {
                 PyErr_SetString(PyExc_ValueError, "azimuth must be set");
                 goto error;
             }
-            stations[i].distance.azimuth = PyFloat_AsDouble(az);
             
             PyObject *len = PyDict_GetItemString(distance_obj, "length");
             if (!len) {
                 PyErr_SetString(PyExc_ValueError, "length must be set");
                 goto error;
             }
-            stations[i].distance.length = PyFloat_AsDouble(len);
+
+            CCDistance distance = {
+                .azimuth = PyFloat_AsDouble(az),
+                .length = PyFloat_AsDouble(len)
+            };
+
+            cc_station_init_relative(&stations[i], stations + parent_index, closure, distance, depth, date, NULL);
+
         } else {
             PyErr_SetString(PyExc_ValueError, "Station must contain 'location' or 'distance'");
             goto error;

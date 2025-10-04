@@ -9,6 +9,41 @@
 static const size_t MAX_LINE_HOP_COUNT = 10000;
 static const double EARTH_CIRCUMFERENCE = 4.007516E7;
 
+void cc_station_init_fixed(
+    CCStation* s,
+    CCStation* parent,
+    CCLocation location,
+    double depth,
+    struct tm date,
+    void* user_data) {
+    if (!s) return;
+    s->parent = parent;
+    s->depth = depth;
+    s->fixed = true;
+    s->closure = NULL;
+    s->location = location;
+    s->date = date;
+    s->user_data = user_data;
+}
+
+void cc_station_init_relative(
+    CCStation* s,
+    CCStation* parent,
+    CCStation* closure,
+    CCDistance distance,
+    double depth,
+    struct tm date,
+    void* user_data) {
+    if (!s) return;
+    s->parent = parent;
+    s->depth = depth;
+    s->fixed = false;
+    s->closure = closure;
+    s->distance = distance;
+    s->date = date;
+    s->user_data = user_data;
+}
+
 static CCPoint decompose_lengths(double length, double azimuth) {
   double d = (-azimuth) / 360.0 * 2.0 * M_PI;
   return (CCPoint){.x = length * sin(d), .y = length * cos(d)};

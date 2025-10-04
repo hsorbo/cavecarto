@@ -58,6 +58,23 @@ typedef struct CCStation {
   void *user_data;           ///< Optional user data
 } CCStation;
 
+void cc_station_init_fixed(
+    CCStation* s,
+    CCStation* parent,
+    CCLocation location,
+    double depth,
+    struct tm date,
+    void* user_data);
+
+void cc_station_init_relative(
+    CCStation* s,
+    CCStation* parent,
+    CCStation* closure,
+    CCDistance distance,
+    double depth,
+    struct tm date,
+    void* user_data);
+
 /**
  * Flags controlling coordinate transformation behavior.
  */

@@ -61,31 +61,14 @@ extension CCStation {
     date: tm = tm(),
     userData: UnsafeMutableRawPointer? = nil
   ) -> CCStation {
+    var s = CCStation()
     switch type {
     case .fixed(at: let location, let parent):
-      let u = CCStation.__Unnamed_union___Anonymous_field4(location: location)
-      return CCStation(
-        depth: depth,
-        fixed: true,
-        parent: parent,
-        closure: nil,
-        u,
-        date: date,
-        user_data: userData
-      )
-
+      cc_station_init_fixed(&s, parent, location, depth, date, userData)
     case .relative(to: let distance, let parent, linkedTo: let linked):
-      let u = CCStation.__Unnamed_union___Anonymous_field4(distance: distance)
-      return CCStation(
-        depth: depth,
-        fixed: false,
-        parent: parent,
-        closure: linked,
-        u,
-        date: date,
-        user_data: userData
-      )
+      cc_station_init_relative(&s, parent, linked, distance, depth, date, userData)
     }
+    return s;
   }
 }
 
