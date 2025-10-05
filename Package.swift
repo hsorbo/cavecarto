@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
   name: "cavecarto",
   platforms: [
-    .iOS(.v14), .macOS(.v12)
+    .iOS(.v14), .macOS(.v12),
   ],
   products: [
     .library(name: "CaveCartoKit", targets: ["CaveCartoKit"])
@@ -27,14 +27,13 @@ let package = Package(
       name: "CaveCartoKit",
       dependencies: ["CCaveCarto"],
       path: "swift/CaveCartoKit",
-      resources: [
-      ]
+      resources: []
     ),
 
     .testTarget(
       name: "CaveCartoKitTests",
       dependencies: ["CaveCartoKit"],
       path: "swift/Tests/CaveCartoKitTests"
-    )
+    ),
   ]
 )
