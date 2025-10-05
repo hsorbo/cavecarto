@@ -10,7 +10,7 @@ final class SmokeTests: XCTestCase {
     stationsPtr.initialize(repeating: CCStation(), count: 2)
 
     stationsPtr[0] = CCStation.makeStation(
-      type: CCStation.StationType2.fixed(
+      type: StationType.fixed(
         at: CCLocation(lon: 10, lat: 60),
         parent: nil),
       depth: 0,
@@ -20,7 +20,7 @@ final class SmokeTests: XCTestCase {
 
     stationsPtr[1] = CCStation.makeStation(
       type:
-        CCStation.StationType2.relative(
+        StationType.relative(
           to: CCDistance(azimuth: 90, length: 10),
           parent: stationsPtr + 0, linkedTo: nil,
         ),

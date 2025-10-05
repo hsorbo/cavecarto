@@ -25,29 +25,26 @@ extension CCLocation {
   }
 }
 
-extension CCStation {
-  public enum StationType {
-    //case fixed(at: LatLon, linkedTo: Station?)
-    //case relative(bearing: Double, distance: Double, linkedTo: Station)
-    case fixed(at: CCLocation, parent: StationId?)
-    case relative(to: CCDistance, parent: StationId, linkedTo: StationId?)
-  }
+public enum StationType<T> {
+  case fixed(at: CCLocation, parent: T?)
+  case relative(to: CCDistance, parent: T, linkedTo: T?)
+}
 
-  public enum StationType2 {
-    //case fixed(at: LatLon, linkedTo: Station?)
-    //case relative(bearing: Double, distance: Double, linkedTo: Station)
-    case fixed(at: CCLocation, parent: UnsafeMutablePointer<CCStation>?)
-    case relative(
-      to: CCDistance, parent: UnsafeMutablePointer<CCStation>,
-      linkedTo: UnsafeMutablePointer<CCStation>?)
-  }
+public protocol StationP {
+  var id: Int32 {get}
+  var type: StationType<StationId> {get}
+  var depth: Double {get}
+  var date: String? {get}
+}
+
+extension CCStation {
 
   public func id() -> Int {
     //assumes userData is set to id of station
     unsafeBitCast(self.user_data, to: Int.self)
   }
 
-  public func type() -> StationType {
+  public func type() -> StationType<StationId> {
     //todo lookup parent/linked
     let parentId: StationId = 11
     return self.fixed
@@ -56,7 +53,7 @@ extension CCStation {
   }
 
   public static func makeStation(
-    type: StationType2,
+    type: StationType<UnsafeMutablePointer<CCStation>>,
     depth: Double,
     date: tm = tm(),
     userData: UnsafeMutableRawPointer? = nil
@@ -118,6 +115,15 @@ public class Compute {
   }
 }
 
+
+private func parseDateToTM(_ s: String?) -> tm {
+  var t = tm()
+  if let s, !s.isEmpty {
+    s.withCString { c in _ = strptime(c, "%Y-%m-%d", &t) }
+  }
+  return t
+}
+
 public class CCStations: RandomAccessCollection {
   public typealias Index = Int
   public typealias Element = CCStation
@@ -155,5 +161,73 @@ public class CCStations: RandomAccessCollection {
       if x.fixed { return x.location }
     }
     return nil
+  }
+
+  public func buildCCStations(from s: [StationP]) -> CCStations? {
+     guard !s.isEmpty else {
+      return nil
+    }
+
+    let count = s.count
+
+    // Allocate a zeroed/known-initialized buffer
+    let stations = UnsafeMutablePointer<CCStation>.allocate(capacity: count)
+    let empty = CCStation.makeStation(
+      type: .fixed(at: CCLocation(lon: 0.0, lat: 0.0), parent: nil),
+      depth: 0,
+      date: tm(),
+      userData: nil
+    )
+    stations.initialize(repeating: empty, count: count)
+
+    // id → index map for relationship fixups
+    var indexById: [Int32: Int] = [:]
+    indexById.reserveCapacity(count)
+    for (i, dto) in s.enumerated() { indexById[dto.id] = i }
+
+    // First pass: fill scalars + union + date + user_data
+    for (i, dto) in s.enumerated() {
+      var s = stations[i]
+      s.depth = dto.depth
+
+      switch dto.type {
+      case .fixed(let at, _):
+        s.fixed = true
+        s.location = at
+
+      case .relative(let to, _, _):
+        s.fixed = false
+        s.distance = to
+      }
+      s.date = parseDateToTM(dto.date)
+      s.parent = nil
+      s.closure = nil
+
+      // Preserve C behavior: stash integer id in user_data
+      s.user_data = UnsafeMutableRawPointer(bitPattern: UInt(bitPattern: Int(dto.id)))
+
+      stations[i] = s
+    }
+
+    // Second pass: fix pointers for parent/closure
+    for (i, dto) in s.enumerated() {
+      
+      switch dto.type {
+      case .fixed(_, let parent):
+        if let pid = parent, let pidx = indexById[pid] {
+          stations[i].parent = stations.advanced(by: pidx)
+        }
+
+      case .relative(_, let parent, let linkedTo):
+        if let pidx = indexById[parent] {
+          stations[i].parent = stations.advanced(by: pidx)
+        }
+        if let lid = linkedTo, let lidx = indexById[lid] {
+          stations[i].closure = stations.advanced(by: lidx)
+        }
+      }
+    }
+
+    return CCStations(stations: stations, count: count)
   }
 }
