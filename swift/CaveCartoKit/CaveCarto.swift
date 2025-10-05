@@ -16,10 +16,9 @@ public enum StationType {
 }
 
 public protocol StationRepresentable {
-  var id: Int32 { get }
-  var type: StationType{ get }
+  var type: StationType { get }
   var depth: Double { get }
-  var date: String? { get }
+  var date: Date? { get } // todo: move to relative (fixed doesn't need magN adj)
 }
 
 public enum CaveCartoError: Error {
@@ -45,14 +44,6 @@ public enum CaveCartoError: Error {
       return unknownError
     }
   }
-}
-
-private func parseDateToTM(_ s: String?) -> tm {
-  var t = tm()
-  if let s, !s.isEmpty {
-    s.withCString { c in _ = strptime(c, "%Y-%m-%d", &t) }
-  }
-  return t
 }
 
 public class CCStations {
@@ -90,6 +81,12 @@ public class CCStations {
     stations.initialize(repeating: CCStation(), count: stationList.count)
 
     for (i, station) in stationList.enumerated() {
+      var t = tm()
+      if let date = station.date {
+        var timeValue = time_t(date.timeIntervalSince1970)
+        localtime_r(&timeValue, &t)
+      }
+
       switch station.type {
       case .fixed(let at, let parent):
         cc_station_init_fixed(
@@ -97,7 +94,7 @@ public class CCStations {
           parent != nil ? stations.advanced(by: Int(parent!)) : nil,
           CCLocation(lon: at.longitude, lat: at.latitude),
           station.depth,
-          parseDateToTM(station.date),
+          t,
           nil)
       case .relative(toParent: let parent, let length, let azimuth, let linkedTo):
         cc_station_init_relative(
@@ -106,7 +103,7 @@ public class CCStations {
           linkedTo != nil ? stations.advanced(by: Int(linkedTo!)) : nil,
           CCaveCarto.CCDistance(azimuth: azimuth, length: length),
           station.depth,
-          parseDateToTM(station.date),
+          t,
           nil)
       }
     }

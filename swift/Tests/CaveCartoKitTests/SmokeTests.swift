@@ -1,14 +1,14 @@
 import CCaveCarto
 import CoreLocation
 import XCTest
+import Foundation
 
 @testable import CaveCartoKit
 
 struct TestStation: StationRepresentable {
-  var id: Int32
-  var type: CaveCartoKit.StationType<Int32>
+  var type: CaveCartoKit.StationType
   var depth: Double
-  var date: String?
+  var date: Date?
 }
 
 final class SmokeTests: XCTestCase {
@@ -16,15 +16,13 @@ final class SmokeTests: XCTestCase {
 
     let stationList: [TestStation] = [
       TestStation(
-        id: 1,
         type: .fixed(at: CLLocationCoordinate2D(latitude: 60, longitude: 10), parent: nil),
         depth: 0,
-        date: ""),
+        date: Date.distantPast),
       TestStation(
-        id: 2,
         type: .relative(toParent: 0, length: 10, azimuth: 90, linkedTo: nil),
         depth: 0,
-        date: ""),
+        date: Date.distantPast),
     ]
 
     var stations = CCStations.makeStations(from: stationList)
