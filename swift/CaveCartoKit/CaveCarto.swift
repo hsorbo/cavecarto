@@ -10,14 +10,14 @@ public struct TransformFlags: OptionSet {
   public static let magNorth = TransformFlags(rawValue: CC_TRANSFORM_MAG_NORTH.rawValue)
 }
 
-public enum StationType<T> {
-  case fixed(at: CLLocationCoordinate2D, parent: T?)
-  case relative(toParent: T, length: Double, azimuth: Double, linkedTo: T?)
+public enum StationType {
+  case fixed(at: CLLocationCoordinate2D, parent: Int?)
+  case relative(toParent: Int, length: Double, azimuth: Double, linkedTo: Int?)
 }
 
 public protocol StationRepresentable {
   var id: Int32 { get }
-  var type: StationType<Int32> { get }
+  var type: StationType{ get }
   var depth: Double { get }
   var date: String? { get }
 }
@@ -70,13 +70,6 @@ public class CCStations {
 
   deinit {
     free(self.stations)
-  }
-
-  public subscript(index: Int) -> CCStation {
-    get {
-      precondition(index >= 0 && index < count, "Index out of bounds")
-      return stations[index]
-    }
   }
 
   public func getDatum() -> CLLocationCoordinate2D? {
