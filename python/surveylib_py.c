@@ -37,15 +37,11 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
             goto error;
         }
 
-        struct tm date;
-        date.tm_year = PyDateTime_GET_YEAR(date_obj) - 1900;
-        date.tm_mon  = PyDateTime_GET_MONTH(date_obj) - 1;
-        date.tm_mday = PyDateTime_GET_DAY(date_obj);
-        date.tm_hour = PyDateTime_DATE_GET_HOUR(date_obj);
-        date.tm_min  = PyDateTime_DATE_GET_MINUTE(date_obj);
-        date.tm_sec  = PyDateTime_DATE_GET_SECOND(date_obj);
-        date.tm_isdst = -1; // let C figure it out
-
+        CCDate date = {
+            .year = PyDateTime_GET_YEAR(date_obj),
+            .month = PyDateTime_GET_MONTH(date_obj),
+            .day = PyDateTime_GET_DAY(date_obj)
+        };
 
         PyObject *location_obj = PyDict_GetItemString(entry, "location");
         PyObject *distance_obj = PyDict_GetItemString(entry, "distance");

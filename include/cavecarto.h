@@ -1,8 +1,9 @@
 #ifndef CAVECARTO_H
 #define CAVECARTO_H
 
+#include <sys/types.h>
 #include <stdbool.h>
-#include <time.h>
+#include <stdint.h>
 
 /**
  * Represents a 2D Cartesian point in meters.
@@ -33,6 +34,14 @@ typedef struct CCDistance {
   double length;  ///< Distance in meters
 } CCDistance;
 
+typedef struct CCDate {
+  uint8_t day;   // 1-12
+  uint8_t month; // 1-31
+  uint16_t year; // 2025
+} CCDate;
+
+CCDate cc_make_date(uint16_t year, uint8_t month, uint8_t day);
+
 /**
  * Represents a survey station, either fixed or relative.
  *
@@ -48,13 +57,13 @@ typedef struct CCDistance {
 typedef struct CCStation {
   double depth;              ///< Depth in meters (msw)
   bool fixed;                ///< Whether the station has an absolute location
+  CCDate date;               ///< Date the station was recorded
   struct CCStation *parent;  ///< Parent station (if relative)
   struct CCStation *closure; ///< Optional closure target for loop closures
   union {
     CCLocation location;     ///< Absolute position (if fixed)
     CCDistance distance;     ///< Relative offset (if not fixed)
   };
-  struct tm date;            ///< Date the station was recorded
 } CCStation;
 
 void cc_station_init_fixed(
@@ -62,7 +71,7 @@ void cc_station_init_fixed(
     CCStation* parent,
     CCLocation location,
     double depth,
-    struct tm date);
+    CCDate date);
 
 void cc_station_init_relative(
     CCStation* s,
@@ -70,7 +79,7 @@ void cc_station_init_relative(
     CCStation* closure,
     CCDistance distance,
     double depth,
-    struct tm date);
+    CCDate date);
 
 /**
  * Flags controlling coordinate transformation behavior.

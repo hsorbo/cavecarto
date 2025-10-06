@@ -14,7 +14,7 @@ void cc_station_init_fixed(
     CCStation* parent,
     CCLocation location,
     double depth,
-    struct tm date) {
+    CCDate date) {
     if (!s) return;
     s->parent = parent;
     s->depth = depth;
@@ -30,7 +30,7 @@ void cc_station_init_relative(
     CCStation* closure,
     CCDistance distance,
     double depth,
-    struct tm date) {
+    CCDate date) {
     if (!s) return;
     s->parent = parent;
     s->depth = depth;
@@ -38,6 +38,15 @@ void cc_station_init_relative(
     s->closure = closure;
     s->distance = distance;
     s->date = date;
+}
+
+CCDate cc_make_date(uint16_t year, uint8_t month, uint8_t day) {
+  CCDate date = {
+    .year = year,
+    .month = month,
+    .day = day,
+  };
+  return date;
 }
 
 static CCPoint decompose_lengths(double length, double azimuth) {
@@ -300,9 +309,9 @@ static CCComputeResult get_coords(CCStation stations[],
       if (!s->fixed) {
         CCLocation new = gps_add(datum, out[i].x, out[i].y);
         adj_az[i] = declination(
-          s->date.tm_year+1900, 
-          s->date.tm_mon+1, 
-          s->date.tm_mday,
+          s->date.year, 
+          s->date.month, 
+          s->date.day,
           new.lat, 
           new.lon, 
           0.0);
