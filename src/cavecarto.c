@@ -14,8 +14,7 @@ void cc_station_init_fixed(
     CCStation* parent,
     CCLocation location,
     double depth,
-    struct tm date,
-    void* user_data) {
+    struct tm date) {
     if (!s) return;
     s->parent = parent;
     s->depth = depth;
@@ -23,7 +22,6 @@ void cc_station_init_fixed(
     s->closure = NULL;
     s->location = location;
     s->date = date;
-    s->user_data = user_data;
 }
 
 void cc_station_init_relative(
@@ -32,8 +30,7 @@ void cc_station_init_relative(
     CCStation* closure,
     CCDistance distance,
     double depth,
-    struct tm date,
-    void* user_data) {
+    struct tm date) {
     if (!s) return;
     s->parent = parent;
     s->depth = depth;
@@ -41,7 +38,6 @@ void cc_station_init_relative(
     s->closure = closure;
     s->distance = distance;
     s->date = date;
-    s->user_data = user_data;
 }
 
 static CCPoint decompose_lengths(double length, double azimuth) {

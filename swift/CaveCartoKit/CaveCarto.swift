@@ -94,8 +94,7 @@ public class CCStations {
           parent != nil ? stations.advanced(by: Int(parent!)) : nil,
           CCLocation(lon: at.longitude, lat: at.latitude),
           station.depth,
-          t,
-          nil)
+          t)
       case .relative(toParent: let parent, let length, let azimuth, let linkedTo):
         cc_station_init_relative(
           &stations[i],
@@ -103,8 +102,7 @@ public class CCStations {
           linkedTo != nil ? stations.advanced(by: Int(linkedTo!)) : nil,
           CCaveCarto.CCDistance(azimuth: azimuth, length: length),
           station.depth,
-          t,
-          nil)
+          t)
       }
     }
 

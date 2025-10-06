@@ -55,7 +55,6 @@ typedef struct CCStation {
     CCDistance distance;     ///< Relative offset (if not fixed)
   };
   struct tm date;            ///< Date the station was recorded
-  void *user_data;           ///< Optional user data
 } CCStation;
 
 void cc_station_init_fixed(
@@ -63,8 +62,7 @@ void cc_station_init_fixed(
     CCStation* parent,
     CCLocation location,
     double depth,
-    struct tm date,
-    void* user_data);
+    struct tm date);
 
 void cc_station_init_relative(
     CCStation* s,
@@ -72,8 +70,7 @@ void cc_station_init_relative(
     CCStation* closure,
     CCDistance distance,
     double depth,
-    struct tm date,
-    void* user_data);
+    struct tm date);
 
 /**
  * Flags controlling coordinate transformation behavior.

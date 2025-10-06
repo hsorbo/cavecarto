@@ -62,7 +62,7 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
                 .lon = PyFloat_AsDouble(lon)
             };
 
-            cc_station_init_fixed(&stations[i], NULL, location, depth, date, NULL);
+            cc_station_init_fixed(&stations[i], NULL, location, depth, date);
         } else if (distance_obj && PyDict_Check(distance_obj)) {
             
             PyObject *parent_index_str = PyDict_GetItemString(distance_obj, "parent_index");
@@ -112,7 +112,7 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
                 .length = PyFloat_AsDouble(len)
             };
 
-            cc_station_init_relative(&stations[i], stations + parent_index, closure, distance, depth, date, NULL);
+            cc_station_init_relative(&stations[i], stations + parent_index, closure, distance, depth, date);
 
         } else {
             PyErr_SetString(PyExc_ValueError, "Station must contain 'location' or 'distance'");
