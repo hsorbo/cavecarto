@@ -8,9 +8,8 @@ import XCTest
 struct TestStation: StationRepresentable {
   var type: CaveCartoKit.StationType
   var depth: Double
-  var date: CCDate?
+  var date: SurveyDate?
 }
-
 
 final class SmokeTests: XCTestCase {
   func testComputeRoundTrip() throws {

@@ -1,6 +1,8 @@
 import CCaveCarto
 import CoreLocation
 
+public typealias SurveyDate = CCaveCarto.CCDate
+
 public struct TransformFlags: OptionSet {
   public let rawValue: UInt32
   public init(rawValue: UInt32) { self.rawValue = rawValue }
@@ -18,15 +20,15 @@ public enum StationType {
 public protocol StationRepresentable {
   var type: StationType { get }
   var depth: Double { get }
-  var date: CCDate? { get }  // todo: move to relative (fixed doesn't need magN adj)
+  var date: SurveyDate? { get }  // todo: move to relative (fixed doesn't need magN adj)
 }
 
-public func makeDate(year: UInt16, month: UInt8, day: UInt8) -> CCDate {
-  return cc_make_date(year, month, day);
-}
+extension SurveyDate {
+  public func zero() -> SurveyDate { return SurveyDate(day: 0, month: 0, year: 0) }
 
-extension CCDate {
-  public func zero() -> CCDate { return CCDate(day: 0, month: 0, year: 0) }
+  public static func makeDate(year: UInt16, month: UInt8, day: UInt8) -> SurveyDate {
+    return cc_make_date(year, month, day)
+  }
 }
 
 public enum CaveCartoError: Error {
