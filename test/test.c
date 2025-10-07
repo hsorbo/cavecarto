@@ -9,12 +9,13 @@ const float GPS_CM = 0.0000001;
 const float GPS_M = 0.000001;
 const float GPS_KM = 0.01;
 
-void rel(CCStation *s, CCStation *parent, CCDistance d) {
-  cc_station_init_relative(s, parent, NULL, d, 0., (CCDate){0});
+void rel(CCStation *s, CCStation *parent, double azimuth, double length) {
+  CCDistance distance = {.azimuth = azimuth, .length = length};
+  cc_station_init_relative(s, parent, NULL, distance, 0., (CCDate){0});
 }
 
-void start(CCStation *s, CCLocation l) {
-  cc_station_init_fixed(s, NULL, l, 0.);
+void start(CCStation *s, double lat, double lon) {
+  cc_station_init_fixed(s, NULL, (CCLocation){.lat = lat, .lon = lon}, 0.);
 }
 
 UTEST(simple, csc) {
@@ -80,14 +81,14 @@ UTEST(simple, csc_scattered) {
 // }
 UTEST(simple, bowtie1) {
   CCStation s[8] = {0};
-  start(&s[0], (CCLocation){.lat = 60., .lon = 60.});
-  start(&s[5], (CCLocation){.lat = 60., .lon = 60.0018});
-  rel(&s[1], &s[0], (CCDistance){.azimuth = 0., .length = 10.});
-  rel(&s[2], &s[1], (CCDistance){.azimuth = 95., .length = 50.});
-  rel(&s[3], &s[0], (CCDistance){.azimuth = 85., .length = 50.});
-  rel(&s[4], &s[5], (CCDistance){.azimuth = 275., .length = 50.});
-  rel(&s[6], &s[5], (CCDistance){.azimuth = 0., .length = 10.});
-  rel(&s[7], &s[6], (CCDistance){.azimuth = 265., .length = 50.});
+  start(&s[0], 60., 60.);
+  start(&s[5], 60., 60.0018);
+  rel(&s[1], &s[0], 0.,  10.);
+  rel(&s[2], &s[1], 95., 50.);
+  rel(&s[3], &s[0], 85., 50.);
+  rel(&s[4], &s[5], 275.,50.);
+  rel(&s[6], &s[5], 0.,  10.);
+  rel(&s[7], &s[6], 265.,50.);
 
   s[2].closure = &s[7];
   s[3].closure = &s[7];
