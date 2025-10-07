@@ -47,12 +47,14 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
                 PyErr_SetString(PyExc_ValueError, "lat/lon must be set");
                 goto error;
             }
-            CCLocation location = {
-                .lat = PyFloat_AsDouble(lat),
-                .lon = PyFloat_AsDouble(lon)
-            };
 
-            cc_station_init_fixed(&stations[i], NULL, location, depth);
+            cc_station_init_fixed(
+                &stations[i],
+                NULL,
+                PyFloat_AsDouble(lat),
+                PyFloat_AsDouble(lon),
+                depth);
+                
         } else if (distance_obj && PyDict_Check(distance_obj)) {
             
             PyObject *parent_index_str = PyDict_GetItemString(distance_obj, "parent_index");
@@ -97,18 +99,20 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
                 goto error;
             }
 
-            CCDistance distance = {
-                .azimuth = PyFloat_AsDouble(az),
-                .length = PyFloat_AsDouble(len)
-            };
-
             CCDate date = {
                 .year = PyDateTime_GET_YEAR(date_obj),
                 .month = PyDateTime_GET_MONTH(date_obj),
                 .day = PyDateTime_GET_DAY(date_obj)
             };
 
-            cc_station_init_relative(&stations[i], stations + parent_index, closure, distance, depth, date);
+            cc_station_init_relative(
+                &stations[i],
+                stations + parent_index,
+                closure,
+                PyFloat_AsDouble(az),
+                PyFloat_AsDouble(len),
+                depth,
+                date);
 
         } else {
             PyErr_SetString(PyExc_ValueError, "Station must contain 'location' or 'distance'");

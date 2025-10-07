@@ -12,21 +12,23 @@ static const double EARTH_CIRCUMFERENCE = 4.007516E7;
 void cc_station_init_fixed(
     CCStation* s,
     CCStation* parent,
-    CCLocation location,
+    double lat,
+    double lon,
     double depth) {
     if (!s) return;
     s->parent = parent;
     s->depth = depth;
     s->fixed = true;
     s->closure = NULL;
-    s->location = location;
+    s->location = (CCLocation) {.lat = lat, .lon = lon};
 }
 
 void cc_station_init_relative(
     CCStation* s,
     CCStation* parent,
     CCStation* closure,
-    CCDistance distance,
+    double azimuth,
+    double length,
     double depth,
     CCDate date) {
     if (!s) return;
@@ -34,7 +36,7 @@ void cc_station_init_relative(
     s->depth = depth;
     s->fixed = false;
     s->closure = closure;
-    s->distance = distance;
+    s->distance = (CCDistance){.azimuth = azimuth, .length = length};
     s->date = date;
 }
 
@@ -304,7 +306,13 @@ static CCComputeResult get_coords(CCStation stations[],
     double * adj_az = malloc(sizeof(double) * length);
     for (int i = 0; i < length; i++) {
       CCStation *s = &stations[i];
-      if (!s->fixed) {
+      
+      bool is_valid_date =
+        s->date.year >= 1900 && s->date.year <= 2500
+        && s->date.month >= 1 && s->date.month <= 12
+        && s->date.day >= 1 && s->date.day <= 31;
+
+      if (!s->fixed && is_valid_date) {
         CCLocation new = gps_add(datum, out[i].x, out[i].y);
         adj_az[i] = declination(
           s->date.year, 

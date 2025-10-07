@@ -69,14 +69,16 @@ typedef struct CCStation {
 void cc_station_init_fixed(
     CCStation* s,
     CCStation* parent,
-    CCLocation location,
+    double lat,
+    double lon,
     double depth);
 
 void cc_station_init_relative(
     CCStation* s,
     CCStation* parent,
     CCStation* closure,
-    CCDistance distance,
+    double azimuth,
+    double length,
     double depth,
     CCDate date);
 

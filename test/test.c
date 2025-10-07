@@ -10,12 +10,11 @@ const float GPS_M = 0.000001;
 const float GPS_KM = 0.01;
 
 void rel(CCStation *s, CCStation *parent, double azimuth, double length) {
-  CCDistance distance = {.azimuth = azimuth, .length = length};
-  cc_station_init_relative(s, parent, NULL, distance, 0., (CCDate){0});
+  cc_station_init_relative(s, parent, NULL, azimuth, length, 0., (CCDate){0});
 }
 
 void start(CCStation *s, double lat, double lon) {
-  cc_station_init_fixed(s, NULL, (CCLocation){.lat = lat, .lon = lon}, 0.);
+  cc_station_init_fixed(s, NULL, lat, lon, 0.);
 }
 
 UTEST(simple, csc) {
