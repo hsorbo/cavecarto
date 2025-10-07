@@ -13,15 +13,13 @@ void cc_station_init_fixed(
     CCStation* s,
     CCStation* parent,
     CCLocation location,
-    double depth,
-    CCDate date) {
+    double depth) {
     if (!s) return;
     s->parent = parent;
     s->depth = depth;
     s->fixed = true;
     s->closure = NULL;
     s->location = location;
-    s->date = date;
 }
 
 void cc_station_init_relative(

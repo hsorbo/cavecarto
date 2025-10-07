@@ -14,13 +14,12 @@ public struct TransformFlags: OptionSet {
 
 public enum StationType {
   case fixed(at: CLLocationCoordinate2D, parent: Int?)
-  case relative(toParent: Int, length: Double, azimuth: Double, linkedTo: Int?)
+  case relative(toParent: Int, length: Double, azimuth: Double, linkedTo: Int?, date: SurveyDate?)
 }
 
 public protocol StationRepresentable {
   var type: StationType { get }
   var depth: Double { get }
-  var date: SurveyDate? { get }  // todo: move to relative (fixed doesn't need magN adj)
 }
 
 extension SurveyDate {
@@ -97,16 +96,15 @@ public class CCStations {
           &stations[i],
           parent != nil ? stations.advanced(by: Int(parent!)) : nil,
           CCLocation(lon: at.longitude, lat: at.latitude),
-          station.depth,
-          station.date ?? CCDate(day: 0, month: 0, year: 0))
-      case .relative(toParent: let parent, let length, let azimuth, let linkedTo):
+          station.depth)
+      case .relative(toParent: let parent, let length, let azimuth, let linkedTo, let date):
         cc_station_init_relative(
           &stations[i],
           stations.advanced(by: Int(parent)),
           linkedTo != nil ? stations.advanced(by: Int(linkedTo!)) : nil,
           CCaveCarto.CCDistance(azimuth: azimuth, length: length),
           station.depth,
-          station.date ?? CCDate(day: 0, month: 0, year: 0))
+          date ?? CCDate(day: 0, month: 0, year: 0))
       }
     }
 

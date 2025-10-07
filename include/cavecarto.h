@@ -70,8 +70,7 @@ void cc_station_init_fixed(
     CCStation* s,
     CCStation* parent,
     CCLocation location,
-    double depth,
-    CCDate date);
+    double depth);
 
 void cc_station_init_relative(
     CCStation* s,

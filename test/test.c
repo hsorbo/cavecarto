@@ -14,7 +14,7 @@ void rel(CCStation *s, CCStation *parent, CCDistance d) {
 }
 
 void start(CCStation *s, CCLocation l) {
-  cc_station_init_fixed(s, NULL, l, 0., (CCDate){0});
+  cc_station_init_fixed(s, NULL, l, 0.);
 }
 
 UTEST(simple, csc) {

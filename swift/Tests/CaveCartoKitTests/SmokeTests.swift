@@ -20,7 +20,7 @@ final class SmokeTests: XCTestCase {
         depth: 0,
         date: nil),
       TestStation(
-        type: .relative(toParent: 0, length: 10, azimuth: 90, linkedTo: nil),
+        type: .relative(toParent: 0, length: 10, azimuth: 90, linkedTo: nil, date: nil),
         depth: 0,
         date: nil),
     ]
