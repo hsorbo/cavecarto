@@ -149,7 +149,7 @@ if __name__ == "__main__":
                     if station.is_fixed()
                     else (".distance", f"{{.azimuth={station.station.azimuth}, .length={station.station.distance} }}")
                 ),
-                (".date", f"{{ .tm_year = {year} - 1900, .tm_mon = {month}-1, .tm_mday = {day}, .tm_hour = 0, .tm_min  = 0, .tm_sec  = 0, .tm_isdst = -1}}"),
+                (".date", f"{{ .year = {year}, .month = {month}, .day = {day}}}"),
             ],
         )
         print(f"{{{str.join(", ", data)}}},")
