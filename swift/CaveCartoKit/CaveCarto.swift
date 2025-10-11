@@ -134,7 +134,7 @@ public class CCStations {
   public func getStationCoordinates(flags: TransformFlags) throws -> [SIMD3<Float>] {
     let datum = self.getDatum()!
     let points = try self.stationXy(
-      datum: CCLocation(lon: datum.longitude, lat: datum.longitude),
+      datum: CCLocation(lon: datum.longitude, lat: datum.latitude),
       flags: flags
     )
     defer {
