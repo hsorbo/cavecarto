@@ -92,7 +92,7 @@ static double calc_distance(double from_depth, double to_depth, double length) {
   return length_xy;
 }
 
-static CCComputeResult calc_a(CCStation stations[], 
+static CCComputeResult build_xy_map(CCStation stations[],
                               size_t stations_length, 
                               CCLocation *datum,
                               CCPoint out[], 
@@ -296,34 +296,34 @@ static CCComputeResult get_coords(CCStation stations[],
                                    bool latlon) {
   CCComputeResult result = CCStation_SUCCESS;
   datum = datum ? datum : find_datum(stations, length);
-  if (datum == NULL) {
-    return CCStation_NO_DATUM;
-  }
-  result = calc_a(stations, length, datum, out, NULL);
+  if (datum == NULL) return CCStation_NO_DATUM;
+
+  result = build_xy_map(stations, length, datum, out, NULL);
   if (result != CCStation_SUCCESS) return result;
   
   if (flags & CC_TRANSFORM_MAG_NORTH) {
-    double * adj_az = malloc(sizeof(double) * length);
+    double * adj_az = calloc(length, sizeof(double));
     for (int i = 0; i < length; i++) {
       CCStation *s = &stations[i];
+      if (s->fixed) continue;
       
       bool is_valid_date =
         s->date.year >= 1900 && s->date.year <= 2500
         && s->date.month >= 1 && s->date.month <= 12
         && s->date.day >= 1 && s->date.day <= 31;
+      
+      if (!is_valid_date) continue;
 
-      if (!s->fixed && is_valid_date) {
-        CCLocation new = gps_add(datum, out[i].x, out[i].y);
-        adj_az[i] = declination(
-          s->date.year, 
-          s->date.month, 
-          s->date.day,
-          new.lat, 
-          new.lon, 
-          0.0);
-      }
+      CCLocation new = gps_add(datum, out[i].x, out[i].y);
+      adj_az[i] = declination(
+        s->date.year, 
+        s->date.month, 
+        s->date.day,
+        new.lat, 
+        new.lon, 
+        0.0);
     }
-    result = calc_a(stations, length, datum, out, adj_az);
+    result = build_xy_map(stations, length, datum, out, adj_az);
     free(adj_az);
     if (result != CCStation_SUCCESS) return result;
   }
