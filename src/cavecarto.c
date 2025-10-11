@@ -160,6 +160,37 @@ typedef struct start_adj {
   double weight;
 } start_adj;
 
+
+static void csparse_solve(DokBuilder *a, double *b1, double *b2, int order) {
+  // https://people.math.sc.edu/Burkardt/c_src/csparse/csparse.html
+  cs *A = dok_builder_to_csc(a);
+
+  css *S = cs_schol(A, order);
+  assert(S && "cs_schol failed");
+
+  csn *N = cs_chol(A, S);
+  assert(N && "cs_chol failed");
+
+  int n = (int)A->n;
+  double *tmp = (double *)malloc((size_t)n * sizeof(double));
+
+  cs_ipvec(n, S->Pinv, b1, tmp);
+  cs_lsolve(N->L, tmp);
+  cs_ltsolve(N->L, tmp);
+  cs_pvec(n, S->Pinv, tmp, b1);
+
+  cs_ipvec(n, S->Pinv, b2, tmp);
+  cs_lsolve(N->L, tmp);
+  cs_ltsolve(N->L, tmp);
+  cs_pvec(n, S->Pinv, tmp, b2);
+
+  free(tmp);
+  cs_nfree(N);
+  cs_sfree(S);
+  cs_spfree(A);
+}
+
+
 static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]) {
   ssize_t *adjust_station_idx = malloc(sizeof(ssize_t) * length);
   size_t adj_station_count = 0;
@@ -238,24 +269,9 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
     bx[idx] += xx.weight * out[xx.start_station - stations].x;
     by[idx] += xx.weight * out[xx.start_station - stations].y;
   }
-  cs *A = dok_builder_to_csc(a);
-  // cs_print(A, 0);
-  // dump_csc(A);
-  // https://people.math.sc.edu/Burkardt/c_src/csparse/csparse.html
-  // cs_qrsol
-  // cs_lusol
-  // cs_chol
-  /*order
-    case -1: printf ("natural    ") ; break ;
-    case  0: printf ("amd(A+A')  ") ; break ;
-    case  1: printf ("amd(S'*S)  ") ; break ;
-    case  2: printf ("amd(A'*A)  ") ; break ;
-  */
-  bool solved = cs_cholsol(A, bx, 0);
-  assert(solved == true);
-  solved = cs_cholsol(A, by, 0);
-  assert(solved == true);
-
+  
+  csparse_solve(a, bx, by, 0); 
+  
   for (int i = 0; i < length; i++) {
     CCStation *current = &stations[i];
     ssize_t idx = adjust_station_idx[current - stations];
@@ -272,7 +288,6 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
       out[i].y = out[s->closure - stations].y;
     }
   }
-  cs_spfree(A);
   free(bx);
   free(by);
   dok_builder_destroy(a);
