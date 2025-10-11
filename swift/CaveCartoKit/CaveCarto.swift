@@ -57,24 +57,15 @@ public enum CaveCartoError: Error {
 }
 
 public class CCStations {
-  var count: Int
+  public private(set) var stations: [CCStation]
+  public var count: Int { stations.count }
 
-  var stations: UnsafeMutablePointer<CCStation>!
-  var stationsBuffer: UnsafeMutableBufferPointer<CCStation> {
-    UnsafeMutableBufferPointer(start: stations, count: count)
-  }
-
-  public init(stations: UnsafeMutablePointer<CCStation>, count: Int) {
+  public init(stations: [CCStation]) {
     self.stations = stations
-    self.count = count
-  }
-
-  deinit {
-    free(self.stations)
   }
 
   public func getDatum() -> CLLocationCoordinate2D? {
-    for x in self.stationsBuffer {
+    for x in stations {
       if x.fixed {
         return CLLocationCoordinate2D(latitude: x.location.lat, longitude: x.location.lon)
       }
@@ -87,8 +78,7 @@ public class CCStations {
       return nil
     }
 
-    let stations = UnsafeMutablePointer<CCStation>.allocate(capacity: stationList.count)
-    stations.initialize(repeating: CCStation(), count: stationList.count)
+    var stations = Array(repeating: CCStation(), count: stationList.count)
 
     for (i, station) in stationList.enumerated() {
       switch station.type {
@@ -111,40 +101,47 @@ public class CCStations {
       }
     }
 
-    return CCStations(stations: stations, count: stationList.count)
+    return CCStations(stations: stations)
   }
 
   private func stationXy(
     datum: CCLocation,
     flags: TransformFlags
-  ) throws -> UnsafeMutablePointer<CCPoint> {
-    let points = UnsafeMutablePointer<CCPoint>.allocate(capacity: count)
-    try! withUnsafeTemporaryAllocation(of: CCLocation.self, capacity: 1) { ptr in
-      ptr.initialize(repeating: datum)
-      let result = cc_compute_station_xy(
-        stations, count, ptr.baseAddress!, points, CCTransformFlags(flags.rawValue))
-      if let error = CaveCartoError.raisy(result: result) {
-        free(points)
-        throw error
+  ) throws -> [CCPoint] {
+    var points = Array(repeating: CCPoint(), count: count)
+    let n = points.count  // capture before closures
+    var d = datum  // keep a var we can take & of
+    let cflags = CCTransformFlags(flags.rawValue)
+
+    try stations.withUnsafeBufferPointer { sBuf in
+      try points.withUnsafeMutableBufferPointer { pBuf in
+        let result = cc_compute_station_xy(
+          UnsafeMutablePointer(mutating: sBuf.baseAddress),  // OK to cast for C API
+          n,
+          &d,
+          pBuf.baseAddress!,
+          cflags
+        )
+        if let error = CaveCartoError.raisy(result: result) {
+          throw error
+        }
       }
     }
     return points
   }
 
   public func getStationCoordinates(flags: TransformFlags) throws -> [SIMD3<Float>] {
-    let datum = self.getDatum()!
+    guard let datum = self.getDatum() else { throw CaveCartoError.noDatumFoundError }
+
     let points = try self.stationXy(
       datum: CCLocation(lon: datum.longitude, lat: datum.latitude),
       flags: flags
     )
-    defer {
-      points.deallocate()
-    }
 
     var v: [SIMD3<Float>] = []
-    v.reserveCapacity(self.count)
-    for i in 0..<self.count {
-      let station = self.stations[i]
+    v.reserveCapacity(count)
+    for i in 0..<count {
+      let station = stations[i]
       v.append(SIMD3<Float>(Float(points[i].x), Float(points[i].y), Float(-station.depth)))
     }
     return v
