@@ -261,7 +261,7 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
   for (int i = 0; i < length; i++) {
     CCStation *current = &stations[i];
     bool adjustable = !current->fixed && current->closure == NULL;
-    // this estimation is shady, ... do better
+    // this estimation is shady, do better
     fix_station_count += current->fixed ? 1 : 0;
     fix_station_count += current->parent != NULL && current->parent->fixed ? 1 : 0;
     adjust_station_idx[i] = adjustable ? adj_station_count++ : -1;
