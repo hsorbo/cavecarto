@@ -96,11 +96,11 @@ UTEST(simple, bowtie1) {
   CCLocation loc[8];
   cc_compute_station_latlon(s, 8, NULL, loc, CC_TRANSFORM_CLOSE_LOOPS);
 
-  ASSERT_NEAR(loc[1].lat, 60.000088782284315, 1e-12);
-  ASSERT_NEAR(loc[1].lon, 60.000000851048455, 1e-12);
+  ASSERT_NEAR(60.000088782284315, loc[1].lat, 1e-12);
+  ASSERT_NEAR(60.000000851048455, loc[1].lon, 1e-12);
 
-  ASSERT_NEAR(loc[2].lat, 60.000044391142154, 1e-12);
-  ASSERT_NEAR(loc[2].lon, 60.000900001207754, 1e-12);
+  ASSERT_NEAR(60.000044391142154, loc[2].lat, 1e-12);
+  ASSERT_NEAR(60.000900001207754, loc[2].lon, 1e-12);
 
   ASSERT_EQ(loc[3].lat, loc[2].lat);
   ASSERT_EQ(loc[3].lon, loc[2].lon);
@@ -112,7 +112,7 @@ UTEST(simple, bowtie1) {
   ASSERT_EQ(loc[5].lon, 60.0018);
 
   ASSERT_EQ(loc[6].lat, loc[1].lat);
-  ASSERT_NEAR(loc[6].lon, 60.001799153782564, 1e-12);
+  ASSERT_NEAR(60.001799153782564, loc[6].lon, 1e-12);
 
   ASSERT_EQ(loc[7].lat, loc[2].lat);
   ASSERT_EQ(loc[7].lon, loc[2].lon);
