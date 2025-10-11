@@ -3,6 +3,23 @@
 #include "stdbool.h"
 #include <string.h>
 
+#define MAX_ROWS 10
+
+typedef struct rowdata {
+  size_t row;
+  double val;
+} rowdata;
+
+typedef struct column_info {
+  rowdata rows[MAX_ROWS];
+  size_t row_count;
+} column_info;
+
+struct matrix_builder {
+  column_info *cols;
+  size_t col_count; // row-col-count as symmetric
+};
+
 matrix_builder *mb_init(size_t size) {
   matrix_builder *a = malloc(sizeof(matrix_builder));
   a->cols = malloc(sizeof(column_info) * size);

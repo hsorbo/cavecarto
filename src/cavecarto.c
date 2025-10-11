@@ -288,7 +288,7 @@ CCLocation *find_datum(CCStation stations[], size_t length) {
   return NULL;
 }
 
-static CCComputeResult get_coords(CCStation stations[], 
+static CCComputeResult get_coords(CCStation stations[],
                                    size_t length, 
                                    CCLocation *datum, 
                                    CCPoint out[],
