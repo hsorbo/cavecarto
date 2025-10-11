@@ -10,6 +10,7 @@ class Transform(Flag):
     NONE = 0
     CLOSE_LOOPS = auto()
     ADJUST_MAG_NORTH = auto()
+    ADJUST_MAG_NORTH_FAST = auto()
 
 
 @dataclass

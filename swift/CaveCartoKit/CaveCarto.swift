@@ -10,6 +10,7 @@ public struct TransformFlags: OptionSet {
   public static let none = TransformFlags([])
   public static let closeLoops = TransformFlags(rawValue: CC_TRANSFORM_CLOSE_LOOPS.rawValue)
   public static let magNorth = TransformFlags(rawValue: CC_TRANSFORM_MAG_NORTH.rawValue)
+  public static let magNorthFast = TransformFlags(rawValue: CC_TRANSFORM_MAG_NORTH_FAST.rawValue)
 }
 
 public enum StationType {

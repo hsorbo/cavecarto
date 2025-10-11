@@ -366,6 +366,30 @@ CCLocation *find_datum(CCStation stations[], size_t length) {
   return NULL;
 }
 
+static inline bool is_valid_date(CCDate d) {
+  return (d.year >= 1900 && d.year <= 2500) &&
+         (d.month >= 1   && d.month <= 12) &&
+         (d.day >= 1     && d.day <= 31);
+}
+
+typedef struct {
+  size_t  idx;
+  CCDate  date;
+  uint32_t key;
+} DateIndex;
+
+static inline uint32_t cc_date_key(CCDate d) {
+  return (uint32_t)d.year * 10000u + (uint32_t)d.month * 100u + (uint32_t)d.day;
+}
+
+static int cc_cmp_dateindex(const void *a, const void *b) {
+  const DateIndex *aa = (const DateIndex *)a;
+  const DateIndex *bb = (const DateIndex *)b;
+  if (aa->key < bb->key) return -1;
+  if (aa->key > bb->key) return  1;
+  return 0;
+}
+
 static CCComputeResult get_coords(CCStation stations[],
                                    size_t length, 
                                    CCLocation *datum, 
@@ -376,21 +400,16 @@ static CCComputeResult get_coords(CCStation stations[],
   datum = datum ? datum : find_datum(stations, length);
   if (datum == NULL) return CCStation_NO_DATUM;
 
-  result = build_xy_map(stations, length, datum, out, NULL);
-  if (result != CCStation_SUCCESS) return result;
+  
   
   if (flags & CC_TRANSFORM_MAG_NORTH) {
+    result = build_xy_map(stations, length, datum, out, NULL);
+    if (result != CCStation_SUCCESS) return result;
     double * adj_az = calloc(length, sizeof(double));
     for (int i = 0; i < length; i++) {
       CCStation *s = &stations[i];
       if (s->fixed) continue;
-      
-      bool is_valid_date =
-        s->date.year >= 1900 && s->date.year <= 2500
-        && s->date.month >= 1 && s->date.month <= 12
-        && s->date.day >= 1 && s->date.day <= 31;
-      
-      if (!is_valid_date) continue;
+      if (!is_valid_date(s->date)) continue;
 
       CCLocation new = gps_add(datum, out[i].x, out[i].y);
       adj_az[i] = declination(
@@ -403,6 +422,42 @@ static CCComputeResult get_coords(CCStation stations[],
     }
     result = build_xy_map(stations, length, datum, out, adj_az);
     free(adj_az);
+    if (result != CCStation_SUCCESS) return result;
+  }
+  else if (flags & CC_TRANSFORM_MAG_NORTH_FAST) {
+    DateIndex *list = (DateIndex *)malloc(length * sizeof(DateIndex));
+    size_t m = 0;
+    for (size_t i = 0; i < length; ++i) {
+      CCStation *s = &stations[i];
+      if (s->fixed) continue;
+      if (!is_valid_date(s->date)) continue;
+      list[m++] = (DateIndex){ .idx = i, .date = s->date, .key = cc_date_key(s->date) };
+    }
+
+    qsort(list, m, sizeof(DateIndex), cc_cmp_dateindex);
+
+    double *adj_az = (double *)calloc(length, sizeof(double));
+    uint32_t prev_key = UINT32_MAX;
+    double prev_decl = 0.0;
+    for (size_t k = 0; k < m; ++k) {
+      DateIndex di = list[k];
+      if (di.key != prev_key) {
+        prev_key = di.key;
+        prev_decl = declination(di.date.year, di.date.month, di.date.day,
+                                datum->lat, datum->lon, 0.0);
+      }
+      adj_az[di.idx] = prev_decl;
+    }
+
+    result = build_xy_map(stations, length, datum, out, adj_az);
+
+    free(adj_az);
+    free(list);
+
+    if (result != CCStation_SUCCESS) return result;
+  }
+  else {
+    result = build_xy_map(stations, length, datum, out, NULL);
     if (result != CCStation_SUCCESS) return result;
   }
 

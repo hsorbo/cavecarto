@@ -89,6 +89,7 @@ typedef enum {
   CC_TRANSFORM_NONE        = 0,
   CC_TRANSFORM_CLOSE_LOOPS = (1 << 0), ///< Attempt to close station loops
   CC_TRANSFORM_MAG_NORTH   = (1 << 1), ///< Adjust for magnetic declination
+  CC_TRANSFORM_MAG_NORTH_FAST = (1 << 2) ///< Adjust for magnetic declination (fast)
 } CCTransformFlags;
 
 /**
