@@ -50,7 +50,7 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
 
             cc_station_init_fixed(
                 &stations[i],
-                NULL,
+                -1,
                 PyFloat_AsDouble(lat),
                 PyFloat_AsDouble(lon),
                 depth);
@@ -72,7 +72,7 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
                 goto error;
             }
             
-            CCStation *closure = NULL;
+            ssize_t closure_index = -1;
             PyObject *closed_index_str = PyDict_GetItemString(distance_obj, "closed_index");
             if (closed_index_str && closed_index_str != Py_None) {
                 if (!PyLong_Check(closed_index_str)) {
@@ -84,7 +84,7 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
                     PyErr_SetString(PyExc_ValueError, "'closed_index' out of bounds");
                     goto error;
                 }
-                closure = stations + closed_index;
+                closure_index = closed_index;
             }
 
             PyObject *az = PyDict_GetItemString(distance_obj, "azimuth");
@@ -107,8 +107,8 @@ static PyObject* py_get_coords(PyObject *self, PyObject *args) {
 
             cc_station_init_relative(
                 &stations[i],
-                stations + parent_index,
-                closure,
+                parent_index,
+                closure_index,
                 PyFloat_AsDouble(az),
                 PyFloat_AsDouble(len),
                 depth,

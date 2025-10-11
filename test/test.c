@@ -9,12 +9,12 @@ const float GPS_CM = 0.0000001;
 const float GPS_M = 0.000001;
 const float GPS_KM = 0.01;
 
-void rel(CCStation *s, CCStation *parent, double azimuth, double length) {
-  cc_station_init_relative(s, parent, NULL, azimuth, length, 0., (CCDate){0});
+void rel(CCStation *s, ssize_t parent, double azimuth, double length) {
+  cc_station_init_relative(s, parent, -1, azimuth, length, 0., (CCDate){0});
 }
 
 void start(CCStation *s, double lat, double lon) {
-  cc_station_init_fixed(s, NULL, lat, lon, 0.);
+  cc_station_init_fixed(s, -1, lat, lon, 0.);
 }
 
 UTEST(simple, csc) {
@@ -82,16 +82,16 @@ UTEST(simple, bowtie1) {
   CCStation s[8] = {0};
   start(&s[0], 60., 60.);
   start(&s[5], 60., 60.0018);
-  rel(&s[1], &s[0], 0.,  10.);
-  rel(&s[2], &s[1], 95., 50.);
-  rel(&s[3], &s[0], 85., 50.);
-  rel(&s[4], &s[5], 275.,50.);
-  rel(&s[6], &s[5], 0.,  10.);
-  rel(&s[7], &s[6], 265.,50.);
+  rel(&s[1], 0, 0.,  10.);
+  rel(&s[2], 1, 95., 50.);
+  rel(&s[3], 0, 85., 50.);
+  rel(&s[4], 5, 275.,50.);
+  rel(&s[6], 5, 0.,  10.);
+  rel(&s[7], 6, 265.,50.);
 
-  s[2].closure = &s[7];
-  s[3].closure = &s[7];
-  s[4].closure = &s[7];
+  s[2].closure = 7;
+  s[3].closure = 7;
+  s[4].closure = 7;
 
   CCLocation loc[8];
   cc_compute_station_latlon(s, 8, NULL, loc, CC_TRANSFORM_CLOSE_LOOPS);

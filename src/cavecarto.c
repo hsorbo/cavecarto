@@ -14,7 +14,7 @@ static const double EARTH_CIRCUMFERENCE = 4.007516E7;
 
 void cc_station_init_fixed(
     CCStation* s,
-    CCStation* parent,
+    ssize_t parent,
     double lat,
     double lon,
     double depth) {
@@ -22,14 +22,14 @@ void cc_station_init_fixed(
     s->parent = parent;
     s->depth = depth;
     s->fixed = true;
-    s->closure = NULL;
+    s->closure = -1;
     s->location = (CCLocation) {.lat = lat, .lon = lon};
 }
 
 void cc_station_init_relative(
     CCStation* s,
-    CCStation* parent,
-    CCStation* closure,
+    ssize_t parent,
+    ssize_t closure,
     double azimuth,
     double length,
     double depth,
@@ -110,8 +110,8 @@ static CCComputeResult build_xy_map(CCStation stations[],
       result = CCStation_NULL;
       goto beach;
     }
-    assert(s->parent == NULL || !s->fixed);
-    if(!s->fixed && s->parent == NULL) {
+    assert(s->parent == -1 || !s->fixed);
+    if(!s->fixed && s->parent == -1) {
       result = CCStation_RELATIVE_MISSING_PARENT;
       goto beach;
     }
@@ -119,16 +119,15 @@ static CCComputeResult build_xy_map(CCStation stations[],
       continue;
 
     size_t depth = 0;
-    for (CCStation *cur = s; cur != NULL; cur = cur->parent) {
+    for (ssize_t cur_i = (s - stations); cur_i != -1; cur_i = stations[cur_i].parent) {
       if (depth >= MAX_LINE_HOP_COUNT) {
         result = CCStation_CYCLE_DETECTED;
         goto beach;
       }
-      walk[depth++] = cur;
-      if (cur->parent != NULL) {
-        size_t idx = cur->parent - stations;
+      walk[depth++] = &stations[cur_i];
+      if (stations[cur_i].parent != -1) {
+        size_t idx = (size_t)stations[cur_i].parent;
         assert(idx <= stations_length);
-        assert(idx >= 0);
         if (out[idx].x != 0. || out[idx].y != 0.) {
           break;
         }
@@ -142,9 +141,8 @@ static CCComputeResult build_xy_map(CCStation stations[],
         out[idx].x = gps_distance_x(*datum, cwd->location);
         out[idx].y = gps_distance_y(*datum, cwd->location);
       } else {
-        size_t parent_idx = cwd->parent - stations;
-        double len =
-            calc_distance(cwd->parent->depth, cwd->depth, cwd->distance.length);
+        size_t parent_idx = (size_t)cwd->parent;
+        double len = calc_distance(stations[parent_idx].depth, cwd->depth, cwd->distance.length);
         double az_adj = adj_azimuth != NULL ? adj_azimuth[idx] : 0.0;
         CCPoint dist = decompose_lengths(len, cwd->distance.azimuth + az_adj);
         out[idx].x = out[parent_idx].x - dist.x;
@@ -260,10 +258,10 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
   size_t fix_station_count = 0;
   for (int i = 0; i < length; i++) {
     CCStation *current = &stations[i];
-    bool adjustable = !current->fixed && current->closure == NULL;
+    bool adjustable = !current->fixed && current->closure == -1;
     // this estimation is shady, do better
     fix_station_count += current->fixed ? 1 : 0;
-    fix_station_count += current->parent != NULL && current->parent->fixed ? 1 : 0;
+    fix_station_count += current->parent != -1 && stations[current->parent].fixed ? 1 : 0;
     adjust_station_idx[i] = adjustable ? adj_station_count++ : -1;
   }
   double *bx = calloc(adj_station_count, sizeof(double));
@@ -279,10 +277,9 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
     if (current->fixed) {
       continue;
     }
-    CCStation *parent = current->parent;
+    size_t parent_idx = (size_t)current->parent; CCStation *parent = (current->parent != -1) ? &stations[parent_idx] : NULL;
     size_t current_idx = current - stations;
-    size_t parent_idx = parent - stations;
-    vec3 current_pos = {
+        vec3 current_pos = {
         .x = out[current_idx].x, .y = out[current_idx].y, .z = current->depth};
     vec3 parent_pos = {
         .x = out[parent_idx].x, .y = out[parent_idx].y, .z = parent->depth};
@@ -291,8 +288,8 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
     double wdistance = vec3_magnitude(distance);
     double weight = 1.0 / (wdistance < 0.1 ? 0.1 : wdistance);
 
-    current = current->closure != NULL ? current->closure : current;
-    parent = parent->closure != NULL ? parent->closure : parent;
+    current = (current->closure != -1) ? &stations[current->closure] : current;
+    parent = (parent->closure != -1) ? &stations[parent->closure] : parent;
 
     ssize_t to_index = adjust_station_idx[current - stations];
     ssize_t from_index = adjust_station_idx[parent - stations];
@@ -346,9 +343,9 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
   }
   for (int i = 0; i < length; i++) {
     CCStation *s = &stations[i];
-    if (s->closure != NULL) {
-      out[i].x = out[s->closure - stations].x;
-      out[i].y = out[s->closure - stations].y;
+    if (s->closure != -1) {
+      out[i].x = out[(size_t)s->closure].x;
+      out[i].y = out[(size_t)s->closure].y;
     }
   }
   free(bx);

@@ -95,15 +95,15 @@ public class CCStations {
       case .fixed(let at, let parent):
         cc_station_init_fixed(
           &stations[i],
-          parent != nil ? stations.advanced(by: Int(parent!)) : nil,
+          parent != nil ? parent! : -1,
           at.latitude,
           at.longitude,
           station.depth)
       case .relative(toParent: let parent, let length, let azimuth, let linkedTo, let date):
         cc_station_init_relative(
           &stations[i],
-          stations.advanced(by: Int(parent)),
-          linkedTo != nil ? stations.advanced(by: Int(linkedTo!)) : nil,
+          parent,
+          linkedTo != nil ? linkedTo! : -1,
           azimuth,
           length,
           station.depth,

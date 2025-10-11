@@ -58,8 +58,8 @@ typedef struct CCStation {
   double depth;              ///< Depth in meters (msw)
   bool fixed;                ///< Whether the station has an absolute location
   CCDate date;               ///< Date the station was recorded
-  struct CCStation *parent;  ///< Parent station (if relative)
-  struct CCStation *closure; ///< Optional closure target for loop closures
+  ssize_t parent;            ///< Parent station (if relative) -1 for none
+  ssize_t closure;           ///< Optional closure target for loop closures, -1 for none
   union {
     CCLocation location;     ///< Absolute position (if fixed)
     CCDistance distance;     ///< Relative offset (if not fixed)
@@ -68,15 +68,15 @@ typedef struct CCStation {
 
 void cc_station_init_fixed(
     CCStation* s,
-    CCStation* parent,
+    ssize_t parent,
     double lat,
     double lon,
     double depth);
 
 void cc_station_init_relative(
     CCStation* s,
-    CCStation* parent,
-    CCStation* closure,
+    ssize_t parent,
+    ssize_t closure,
     double azimuth,
     double length,
     double depth,

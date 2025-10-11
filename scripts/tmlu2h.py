@@ -142,8 +142,8 @@ if __name__ == "__main__":
             [
                 (".depth", station.depth),
                 (".fixed", "true" if station.is_fixed() else "false"),
-                (".parent", "NULL" if station.is_fixed() else f"&stations[{ids[station.parent]}]"),
-                (".closure", "NULL" if not station.is_linked() else f"&stations[{ids[station.station.linked]}]"),
+                (".parent", "-1" if station.is_fixed() else f"{ids[station.parent]}"),
+                (".closure", "-1" if not station.is_linked() else f"{ids[station.station.linked]}"),
                 (
                     (".location", f"{{.lat={station.station.latitude}, .lon={station.station.longitude} }}")
                     if station.is_fixed()
