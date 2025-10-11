@@ -16,10 +16,12 @@ let package = Package(
       sources: ["src"],
       publicHeadersPath: "include",
       cSettings: [
-        .headerSearchPath("src")
+        .headerSearchPath("src"),
+        .define("USE_ACCELERATE", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS]))
       ],
       linkerSettings: [
-        .linkedLibrary("m", .when(platforms: [.linux]))
+        .linkedLibrary("m", .when(platforms: [.linux])),
+        .linkedFramework("Accelerate", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS]))
       ]
     ),
 

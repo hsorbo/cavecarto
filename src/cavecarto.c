@@ -5,6 +5,9 @@
 #include <math.h>
 #include <string.h>
 #include "igrf.h"
+#ifdef USE_ACCELERATE
+#include <Accelerate/Accelerate.h>
+#endif
 
 static const size_t MAX_LINE_HOP_COUNT = 10000;
 static const double EARTH_CIRCUMFERENCE = 4.007516E7;
@@ -160,9 +163,69 @@ typedef struct start_adj {
   double weight;
 } start_adj;
 
+#ifdef USE_ACCELERATE
+static void solve(DokBuilder *builder, double *b1, double *b2) {
+  cs *A = dok_builder_to_csc(builder);
+  const int n = (int)A->n;
 
-static void csparse_solve(DokBuilder *a, double *b1, double *b2, int order) {
+  /* Accelerate requires columnStarts as long*. Copy A->p (int*) -> long*. */
+  long *colStarts = (long *)malloc((size_t)(n + 1) * sizeof(long));
+  for (int i = 0; i <= n; ++i) colStarts[i] = (long)A->p[i];
+
+  /* Attributes: symmetric, lower triangle, not transposed */
+  SparseAttributes_t attrs;
+  attrs.transpose = false;
+  attrs.triangle  = SparseLowerTriangle;
+  attrs.kind      = SparseSymmetric;
+
+  SparseMatrixStructure structure = (SparseMatrixStructure){
+    .rowCount     = n,
+    .columnCount  = n,
+    .columnStarts = colStarts,         /* long* */
+    .rowIndices   = (int *)A->i,       /* int*  */
+    .attributes   = attrs,
+    .blockSize    = 1
+  };
+
+  SparseMatrix_Double As = (SparseMatrix_Double){
+    .structure = structure,
+    .data      = A->x                  /* double* values */
+  };
+
+  /* RHS as dense n×2, column-major */
+  double *Bdata = (double *)malloc((size_t)n * 2 * sizeof(double));
+  memcpy(Bdata,             b1, (size_t)n * sizeof(double));
+  memcpy(Bdata + (size_t)n, b2, (size_t)n * sizeof(double));
+
+  DenseMatrix_Double B = (DenseMatrix_Double){
+    .rowCount     = n,
+    .columnCount  = 2,
+    .columnStride = n,
+    .attributes   = (SparseAttributes_t){0},  /* ordinary dense */
+    .data         = Bdata
+  };
+
+  /* Factor (Cholesky) and solve */
+  SparseOpaqueFactorization_Double F =
+      SparseFactor(SparseFactorizationCholesky, As);
+  /* If A might be only PSD or not strictly SPD, try:
+     SparseFactor(SparseFactorizationCholeskyAtA, As); */
+
+  SparseSolve(F, B);  /* overwrites B.data with solutions */
+
+  /* Copy back, cleanup */
+  memcpy(b1, Bdata,             (size_t)n * sizeof(double));
+  memcpy(b2, Bdata + (size_t)n, (size_t)n * sizeof(double));
+
+  SparseCleanup(F);
+  free(Bdata);
+  free(colStarts);
+  cs_spfree(A);
+}
+#else
+static void solve(DokBuilder *a, double *b1, double *b2) {
   // https://people.math.sc.edu/Burkardt/c_src/csparse/csparse.html
+  int order = 0;
   cs *A = dok_builder_to_csc(a);
 
   css *S = cs_schol(A, order);
@@ -189,7 +252,7 @@ static void csparse_solve(DokBuilder *a, double *b1, double *b2, int order) {
   cs_sfree(S);
   cs_spfree(A);
 }
-
+#endif
 
 static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]) {
   ssize_t *adjust_station_idx = malloc(sizeof(ssize_t) * length);
@@ -270,7 +333,7 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
     by[idx] += xx.weight * out[xx.start_station - stations].y;
   }
   
-  csparse_solve(a, bx, by, 0); 
+  solve(a, bx, by);
   
   for (int i = 0; i < length; i++) {
     CCStation *current = &stations[i];

@@ -29,6 +29,16 @@ set(HEADERS
 add_library(surveylib ${SOURCES} ${HEADERS})
 target_include_directories(surveylib PUBLIC ${INCLUDE_DIR} PRIVATE ${SRC_DIR})
 target_link_libraries(surveylib PRIVATE m)
+if(APPLE)
+  find_library(ACCELERATE_FRAMEWORK Accelerate)
+  if(ACCELERATE_FRAMEWORK)
+    target_link_libraries(surveylib PRIVATE "${ACCELERATE_FRAMEWORK}")
+    target_compile_definitions(surveylib PRIVATE USE_ACCELERATE)
+    message(STATUS "Accelerate found: enabling USE_ACCELERATE")
+  else()
+    message(STATUS "Accelerate not found: building without USE_ACCELERATE")
+  endif()
+endif()
 
 # Python bindings
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
