@@ -17,7 +17,7 @@ set(TEST_DIR "test")
 set(SOURCES
     ${SRC_DIR}/cavecarto.c
     ${SRC_DIR}/igrf.c
-    ${SRC_DIR}/matrix_builder.c
+    ${SRC_DIR}/dok_builder.c
     ${SRC_DIR}/csparse.c
 )
 

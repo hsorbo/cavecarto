@@ -1,5 +1,5 @@
 #include "cavecarto.h"
-#include "matrix_builder.h"
+#include "dok_builder.h"
 #include "utest.h"
 #include "igrf.h"
 #include <math.h>
@@ -18,16 +18,16 @@ void start(CCStation *s, double lat, double lon) {
 }
 
 UTEST(simple, csc) {
-  matrix_builder *a = mb_init(8);
+  DokBuilder *a = dok_builder_create(8);
   // https://matteding.github.io/2019/04/25/sparse-matrices/
-  mb_update(a, 0, 0, 8.0); // [8, 0, 2, 0, 0]
-  mb_update(a, 2, 0, 2.0); // [0, 0, 5, 0, 0]
-  mb_update(a, 2, 1, 5.0); // [0, 0, 0, 0, 0]
-  mb_update(a, 2, 4, 7.0); // [0, 0, 0, 0, 0]
-  mb_update(a, 3, 4, 1.0); // [0, 0, 7, 1, 2]
-  mb_update(a, 4, 4, 2.0); // [0, 0, 0, 0, 0]
-  mb_update(a, 3, 6, 9.0); // [0, 0, 0, 9, 0]
-  cs *A = mb_csc(a);
+  dok_builder_add(a, 0, 0, 8.0); // [8, 0, 2, 0, 0]
+  dok_builder_add(a, 2, 0, 2.0); // [0, 0, 5, 0, 0]
+  dok_builder_add(a, 2, 1, 5.0); // [0, 0, 0, 0, 0]
+  dok_builder_add(a, 2, 4, 7.0); // [0, 0, 0, 0, 0]
+  dok_builder_add(a, 3, 4, 1.0); // [0, 0, 7, 1, 2]
+  dok_builder_add(a, 4, 4, 2.0); // [0, 0, 0, 0, 0]
+  dok_builder_add(a, 3, 6, 9.0); // [0, 0, 0, 9, 0]
+  cs *A = dok_builder_to_csc(a);
   
   int indptr[] = {0, 1, 1, 4, 6, 7};
   for (int i = 0; i < sizeof(indptr) / sizeof(indptr[0]); i++) {
@@ -47,15 +47,15 @@ UTEST(simple, csc) {
 
 UTEST(simple, csc_scattered) {
   // Same as csc but build order is randomized
-  matrix_builder *a = mb_init(8);
-  mb_update(a, 3, 6, 9.0);
-  mb_update(a, 2, 4, 7.0);
-  mb_update(a, 0, 0, 8.0);
-  mb_update(a, 4, 4, 2.0);
-  mb_update(a, 2, 0, 2.0);
-  mb_update(a, 2, 1, 5.0);
-  mb_update(a, 3, 4, 1.0);
-  cs *A = mb_csc(a);
+  DokBuilder *a = dok_builder_create(8);
+  dok_builder_add(a, 3, 6, 9.0);
+  dok_builder_add(a, 2, 4, 7.0);
+  dok_builder_add(a, 0, 0, 8.0);
+  dok_builder_add(a, 4, 4, 2.0);
+  dok_builder_add(a, 2, 0, 2.0);
+  dok_builder_add(a, 2, 1, 5.0);
+  dok_builder_add(a, 3, 4, 1.0);
+  cs *A = dok_builder_to_csc(a);
   
   int indptr[] = {0, 1, 1, 4, 6, 7};
   for (int i = 0; i < sizeof(indptr) / sizeof(indptr[0]); i++) {

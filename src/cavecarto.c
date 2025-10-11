@@ -1,7 +1,7 @@
 #include "cavecarto.h"
 #include "assert.h"
 #include "csparse.h"
-#include "matrix_builder.h"
+#include "dok_builder.h"
 #include <math.h>
 #include <string.h>
 #include "igrf.h"
@@ -175,7 +175,7 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
   double *bx = calloc(adj_station_count, sizeof(double));
   double *by = calloc(adj_station_count, sizeof(double));
 
-  matrix_builder *a = mb_init(adj_station_count);
+  DokBuilder *a = dok_builder_create(adj_station_count);
 
   start_adj *p = calloc(fix_station_count, sizeof(start_adj));
   int plen = 0;
@@ -209,18 +209,18 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
     if (!current->fixed) {
       bx[to_index] += weight * distance.x;
       by[to_index] += weight * distance.y;
-      mb_update(a, to_index, to_index, weight);
+      dok_builder_add(a, to_index, to_index, weight);
     }
 
     if (!parent->fixed) {
       bx[from_index] += -weight * distance.x;
       by[from_index] += -weight * distance.y;
-      mb_update(a, from_index, from_index, weight);
+      dok_builder_add(a, from_index, from_index, weight);
     }
 
     if (!parent->fixed && !current->fixed) {
-      mb_update(a, to_index, from_index, -weight);
-      mb_update(a, from_index, to_index, -weight);
+      dok_builder_add(a, to_index, from_index, -weight);
+      dok_builder_add(a, from_index, to_index, -weight);
     }
 
     if (current->fixed && !parent->fixed) {
@@ -238,7 +238,7 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
     bx[idx] += xx.weight * out[xx.start_station - stations].x;
     by[idx] += xx.weight * out[xx.start_station - stations].y;
   }
-  cs *A = mb_csc(a);
+  cs *A = dok_builder_to_csc(a);
   // cs_print(A, 0);
   // dump_csc(A);
   // https://people.math.sc.edu/Burkardt/c_src/csparse/csparse.html
@@ -275,7 +275,7 @@ static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]
   cs_spfree(A);
   free(bx);
   free(by);
-  mb_free(a);
+  dok_builder_destroy(a);
   free(p);
   free(adjust_station_idx);
 }
