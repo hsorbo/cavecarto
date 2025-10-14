@@ -9,6 +9,11 @@
 #include <Accelerate/Accelerate.h>
 #endif
 
+
+#ifndef M_PI
+#define M_PI        3.14159265358979323846264338327950288
+#endif
+
 static const size_t MAX_LINE_HOP_COUNT = 10000;
 static const double EARTH_CIRCUMFERENCE = 4.007516E7;
 

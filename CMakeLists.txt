@@ -5,6 +5,7 @@ project(surveylib C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_compile_options(-Wall -Werror)
 
@@ -60,6 +61,7 @@ target_link_libraries(test_suite PRIVATE surveylib)
 
 add_executable(bench_suite ${TEST_DIR}/bench.c)
 target_include_directories(bench_suite PRIVATE ${SRC_DIR})
+set_property(TARGET bench_suite PROPERTY C_EXTENSIONS ON)
 target_link_libraries(bench_suite PRIVATE surveylib)
 
 # Enable testing

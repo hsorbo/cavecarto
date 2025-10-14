@@ -76,13 +76,9 @@ double declination(int year, int month, int day, double latitude, double longitu
   if (modelI == MAXMOD)
     modelI--; /* if beyond end of last model use last model */
 
-  /* Get altitude min and max for selected model. */
-  double minalt = models[modelI].altmin;
-  double maxalt = models[modelI].altmax;
-
   // convert meter
   input.alt *= 0.001;
-  assert(input.alt > minalt && input.alt < maxalt);
+  assert(input.alt > models[modelI].altmin && input.alt < models[modelI].altmax);
 
   
 
@@ -240,8 +236,8 @@ static void shval3(int igdgc, double flat, double flon, double elev, int nmax,
   double earths_radius = 6371.2;
   double dtr = 0.01745329;
   double aa, bb, cc, dd;
-  double rr;
-  double fn;
+  double rr = 0;
+  double fn = 0;
   double sl[14];
   double cl[14];
   double p[119];
