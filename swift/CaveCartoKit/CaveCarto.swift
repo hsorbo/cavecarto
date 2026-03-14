@@ -23,6 +23,15 @@ public protocol StationRepresentable {
   var depth: Double { get }
 }
 
+extension StationRepresentable {
+  public var parent: Int? {
+    switch self.type {
+    case .fixed(at: _, let parent): return parent
+    case .relative(toParent: let parent, _, _, _, _): return parent
+    }
+  }
+}
+
 extension SurveyDate {
   public func zero() -> SurveyDate { return SurveyDate(day: 0, month: 0, year: 0) }
 
