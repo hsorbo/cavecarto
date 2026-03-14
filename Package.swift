@@ -17,11 +17,11 @@ let package = Package(
       publicHeadersPath: "include",
       cSettings: [
         .headerSearchPath("src"),
-        .define("USE_ACCELERATE", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS]))
+        .define("USE_ACCELERATE", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS])),
       ],
       linkerSettings: [
         .linkedLibrary("m", .when(platforms: [.linux])),
-        .linkedFramework("Accelerate", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS]))
+        .linkedFramework("Accelerate", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS])),
       ]
     ),
 
