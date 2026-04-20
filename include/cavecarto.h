@@ -5,6 +5,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#if defined(_MSC_VER) && !defined(_SSIZE_T_DEFINED)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#define _SSIZE_T_DEFINED
+#endif
+
 /**
  * Represents a 2D Cartesian point in meters.
  *

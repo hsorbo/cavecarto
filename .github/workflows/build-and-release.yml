@@ -52,7 +52,7 @@ jobs:
           CIBW_ARCHS_WINDOWS: "AMD64"
           CIBW_CONFIG_SETTINGS: "cmake.define.CAVECARTO_BUILD_TESTS=OFF"
           CIBW_ENVIRONMENT_MACOS: "MACOSX_DEPLOYMENT_TARGET=10.13"
-          CIBW_TEST_COMMAND: 'python -c "import cavecarto"'
+          CIBW_TEST_COMMAND: 'python -c "import cavecarto; import cavecarto._cavecarto"'
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4

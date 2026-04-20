@@ -51,8 +51,8 @@ endif()
 # Python bindings
 find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 
-add_library(surveylib_py MODULE python/surveylib_py.c)
-target_link_libraries(surveylib_py PRIVATE surveylib Python3::Module)
+Python3_add_library(surveylib_py MODULE WITH_SOABI python/surveylib_py.c)
+target_link_libraries(surveylib_py PRIVATE surveylib)
 if(NOT WIN32)
   target_link_libraries(surveylib_py PRIVATE m)
 endif()
@@ -60,7 +60,10 @@ target_include_directories(surveylib_py PRIVATE ${INCLUDE_DIR} ${SRC_DIR})
 set_target_properties(surveylib_py PROPERTIES
     OUTPUT_NAME "_cavecarto"
     PREFIX ""  # Don't prefix with lib
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python/cavecarto"
+)
+install(TARGETS surveylib_py
+  LIBRARY DESTINATION cavecarto
+  RUNTIME DESTINATION cavecarto
 )
 
 
