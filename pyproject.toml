@@ -3,7 +3,7 @@ requires = ["scikit-build-core[pyproject]>=0.7.0", "pybind11"]  # pybind11 not u
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "cavecarto"
+name = "pycavecarto"
 version = "0.1.0"
 description = "Python bindings for the cavecarto C library"
 authors = [{name = "Håvard Sørbø", email = "havard@hsorbo.no"}]

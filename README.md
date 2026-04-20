@@ -18,10 +18,15 @@ python3 scripts/tmlu2h.py ~/Downloads/MEGAFILE.tmlu > test/bench.h
 
 Install
 ```
-pip3 install .
+pip3 install pycavecarto
 ```
 
 Uninstall
 ```
-pip3 uninstall cavecarto -y
+pip3 uninstall pycavecarto -y
+```
+
+Usage
+```
+import cavecarto
 ```
