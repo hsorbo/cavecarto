@@ -1,5 +1,5 @@
 {
-  description = "surveylib flake.nix";
+  description = "cavecarto flake.nix";
 
   inputs.nixpkgs.url = "nixpkgs/nixos-unstable";
 
@@ -9,7 +9,7 @@
       pkgs = import nixpkgs { inherit system; };
     in {
       packages.${system}.default = pkgs.clangStdenv.mkDerivation {
-        pname = "surveylib";
+        pname = "cavecarto";
         version = "0.0.1";
         src = self;
 
@@ -28,4 +28,3 @@
       };
     };
 }
-

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Tuple, Union, Optional
 from enum import Flag, auto
-from . import _surveylib
+from . import _cavecarto
 
 
 class Transform(Flag):
@@ -55,14 +55,18 @@ class Station:
             raise TypeError("pos must be Fixed or Relative")
         return out
 
-def compute_station_latlon(stations: List[Station], datum: Optional[Fixed], flags: Transform = Transform.NONE
-) -> Tuple[List[float], List[float]]:
-    station_dicts = [s.to_dict() for s in stations]
-    datum_dict = datum.to_dict() if datum is not None else None
-    return _surveylib.get_coords(station_dicts, datum_dict, flags.value, True)
 
-def compute_station_xy(stations: List[Station], datum: Optional[Fixed], flags: Transform = Transform.NONE
+def compute_station_latlon(
+    stations: List[Station], datum: Optional[Fixed], flags: Transform = Transform.NONE
 ) -> Tuple[List[float], List[float]]:
     station_dicts = [s.to_dict() for s in stations]
     datum_dict = datum.to_dict() if datum is not None else None
-    return _surveylib.get_coords(station_dicts, datum_dict, flags.value, False)
+    return _cavecarto.get_coords(station_dicts, datum_dict, flags.value, True)
+
+
+def compute_station_xy(
+    stations: List[Station], datum: Optional[Fixed], flags: Transform = Transform.NONE
+) -> Tuple[List[float], List[float]]:
+    station_dicts = [s.to_dict() for s in stations]
+    datum_dict = datum.to_dict() if datum is not None else None
+    return _cavecarto.get_coords(station_dicts, datum_dict, flags.value, False)

@@ -190,15 +190,15 @@ static PyMethodDef SurveylibMethods[] = {
     {NULL, NULL, 0, NULL}  // Sentinel
 };
 
-static struct PyModuleDef surveylib_module = {
+static struct PyModuleDef cavecarto_module = {
     PyModuleDef_HEAD_INIT,
-    "_surveylib",
+    "_cavecarto",
     NULL,
     -1,
     SurveylibMethods
 };
 
-PyMODINIT_FUNC PyInit__surveylib(void) {
+PyMODINIT_FUNC PyInit__cavecarto(void) {
     PyDateTime_IMPORT;
-    return PyModule_Create(&surveylib_module);
+    return PyModule_Create(&cavecarto_module);
 }

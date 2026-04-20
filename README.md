@@ -23,5 +23,5 @@ pip3 install .
 
 Uninstall
 ```
-pip3 uninstall surveylib -y
+pip3 uninstall cavecarto -y
 ```

@@ -48,9 +48,9 @@ add_library(surveylib_py MODULE python/surveylib_py.c)
 target_link_libraries(surveylib_py PRIVATE surveylib Python3::Python m)
 target_include_directories(surveylib_py PRIVATE ${INCLUDE_DIR} ${SRC_DIR})
 set_target_properties(surveylib_py PROPERTIES
-    OUTPUT_NAME "_surveylib"
+    OUTPUT_NAME "_cavecarto"
     PREFIX ""  # Don't prefix with lib
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python/surveylib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python/cavecarto"
 )
 
 
