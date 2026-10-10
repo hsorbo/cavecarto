@@ -32,11 +32,8 @@ typedef struct state {
   double gh1[MAXCOEFF];
   double gh2[MAXCOEFF];
   double gha[MAXCOEFF];
-  double ghb[MAXCOEFF];
   struct dfhi dfhi;
-  struct dfhi dfhi_temp;
   struct xyz xyz;
-  struct xyz xyz_temp;
 } state;
 
 static double julday(int month, int day, int year);
@@ -100,16 +97,12 @@ double declination(int year, int month, int day, double latitude, double longitu
 
     nmax = interpsh(&glob, input.sdate, fra->yrmin, fra->max1, til->yrmin,
                     til->max1, glob.gha);
-    nmax = interpsh(&glob, input.sdate + 1, fra->yrmin, fra->max1, til->yrmin,
-                    til->max1, glob.ghb);
   } else {
     getshc(&glob, model_from, 1, fra->max1, 1);
     getshc(&glob, model_to, 0, fra->max2, 2);
 
     nmax = extrapsh(&glob, input.sdate, fra->epoch, fra->max1, fra->max2,
                     glob.gha);
-    nmax = extrapsh(&glob, input.sdate + 1, fra->epoch, fra->max1, fra->max2,
-                    glob.ghb);
   }
 
   /* Do the first calculations */
@@ -117,16 +110,6 @@ double declination(int year, int month, int day, double latitude, double longitu
   shval3(igdgc, input.latitude, input.longitude, input.alt, nmax, IEXT,
          EXT_COEFF1, EXT_COEFF2, EXT_COEFF3, &glob.xyz, glob.gha);
   dihf(&glob.xyz, &glob.dfhi);
-  shval3(igdgc, input.latitude, input.longitude, input.alt, nmax, IEXT,
-         EXT_COEFF1, EXT_COEFF2, EXT_COEFF3, &glob.xyz_temp, glob.ghb);
-  dihf(&glob.xyz_temp, &glob.dfhi_temp);
-
-  double ddot = ((glob.dfhi_temp.d - glob.dfhi.d) * RAD2DEG);
-  if (ddot > 180.0)
-    ddot -= 360.0;
-  if (ddot <= -180.0)
-    ddot += 360.0;
-  ddot *= 60.0;
 
   glob.dfhi.d = glob.dfhi.d * (RAD2DEG);
   glob.dfhi.i = glob.dfhi.i * (RAD2DEG);
