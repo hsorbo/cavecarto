@@ -374,22 +374,16 @@ static inline bool is_valid_date(CCDate d) {
          (d.day >= 1     && d.day <= 31);
 }
 
-typedef struct {
-  size_t  idx;
-  CCDate  date;
-  uint32_t key;
-} DateIndex;
-
-static inline uint32_t cc_date_key(CCDate d) {
-  return (uint32_t)d.year * 10000u + (uint32_t)d.month * 100u + (uint32_t)d.day;
+static inline bool is_leap_year(uint16_t year) {
+  return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
 }
 
-static int cc_cmp_dateindex(const void *a, const void *b) {
-  const DateIndex *aa = (const DateIndex *)a;
-  const DateIndex *bb = (const DateIndex *)b;
-  if (aa->key < bb->key) return -1;
-  if (aa->key > bb->key) return  1;
-  return 0;
+// Fraction of the year elapsed at the start of the given day, 0 on Jan 1
+static double year_fraction(CCDate d) {
+  static const uint16_t days_before[12] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+  bool leap = is_leap_year(d.year);
+  double day = days_before[d.month - 1] + (d.month > 2 && leap) + (d.day - 1);
+  return day / (leap ? 366.0 : 365.0);
 }
 
 static CCComputeResult get_coords(CCStation stations[],
@@ -427,34 +421,37 @@ static CCComputeResult get_coords(CCStation stations[],
     if (result != CCStation_SUCCESS) return result;
   }
   else if (flags & CC_TRANSFORM_MAG_NORTH_FAST) {
-    DateIndex *list = (DateIndex *)malloc(length * sizeof(DateIndex));
-    size_t m = 0;
+    // Declination at the datum drifts slowly, so evaluate it on Jan 1 of
+    // each year and interpolate linearly within the year.
+    uint16_t first_year = UINT16_MAX, last_year = 0;
     for (size_t i = 0; i < length; ++i) {
       CCStation *s = &stations[i];
       if (s->fixed) continue;
       if (!is_valid_date(s->date)) continue;
-      list[m++] = (DateIndex){ .idx = i, .date = s->date, .key = cc_date_key(s->date) };
+      if (s->date.year < first_year) first_year = s->date.year;
+      if (s->date.year > last_year) last_year = s->date.year;
     }
 
-    qsort(list, m, sizeof(DateIndex), cc_cmp_dateindex);
-
     double *adj_az = (double *)calloc(length, sizeof(double));
-    uint32_t prev_key = UINT32_MAX;
-    double prev_decl = 0.0;
-    for (size_t k = 0; k < m; ++k) {
-      DateIndex di = list[k];
-      if (di.key != prev_key) {
-        prev_key = di.key;
-        prev_decl = declination(di.date.year, di.date.month, di.date.day,
-                                datum->lat, datum->lon, 0.0);
+    if (first_year <= last_year) {
+      size_t knot_count = (size_t)(last_year - first_year) + 2;
+      double *knots = (double *)malloc(knot_count * sizeof(double));
+      for (size_t k = 0; k < knot_count; ++k) {
+        knots[k] = declination((int)(first_year + k), 1, 1, datum->lat, datum->lon, 0.0);
       }
-      adj_az[di.idx] = prev_decl;
+      for (size_t i = 0; i < length; ++i) {
+        CCStation *s = &stations[i];
+        if (s->fixed) continue;
+        if (!is_valid_date(s->date)) continue;
+        size_t k = s->date.year - first_year;
+        adj_az[i] = knots[k] + (knots[k + 1] - knots[k]) * year_fraction(s->date);
+      }
+      free(knots);
     }
 
     result = build_xy_map(stations, length, datum, out, adj_az);
 
     free(adj_az);
-    free(list);
 
     if (result != CCStation_SUCCESS) return result;
   }
