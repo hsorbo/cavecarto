@@ -160,12 +160,6 @@ static CCComputeResult build_xy_map(CCStation stations[],
   return result;
 }
 
-typedef struct start_adj {
-  CCStation *start_station;
-  CCStation *to_station;
-  double weight;
-} start_adj;
-
 #ifdef USE_ACCELERATE
 static void solve(DokBuilder *builder, double *b1, double *b2) {
   cs *A = dok_builder_to_csc(builder);
@@ -257,107 +251,249 @@ static void solve(DokBuilder *a, double *b1, double *b2) {
 }
 #endif
 
-static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]) {
-  ssize_t *adjust_station_idx = malloc(sizeof(ssize_t) * length);
-  size_t adj_station_count = 0;
-  size_t fix_station_count = 0;
-  for (int i = 0; i < length; i++) {
-    CCStation *current = &stations[i];
-    bool adjustable = !current->fixed && current->closure == -1;
-    // this estimation is shady, do better
-    fix_station_count += current->fixed ? 1 : 0;
-    fix_station_count += current->parent != -1 && stations[current->parent].fixed ? 1 : 0;
-    adjust_station_idx[i] = adjustable ? adj_station_count++ : -1;
+// Least squares loop closure on the survey network, reduced before solving:
+// - dangling branches carry no misclosure and just follow their attachment point
+// - chains of degree 2 stations collapse into one edge between junctions
+//   (weights combine in series), and the misclosure is spread back along them
+// Both are exact eliminations, so the result matches solving the full system.
+
+typedef struct ls_edge {
+  size_t a; // x_a - x_b ~= d
+  size_t b;
+  double weight;
+  CCPoint d;
+} ls_edge;
+
+typedef struct ls_step {
+  size_t edge;
+  size_t next; // node reached by this step
+} ls_step;
+
+typedef struct ls_chain {
+  size_t from;
+  size_t to;
+  size_t first; // index into steps
+  size_t count;
+  CCPoint d;         // summed displacement, x_to - x_from
+  double resistance; // sum of 1 / weight
+} ls_chain;
+
+enum { LS_EDGE_ALIVE, LS_EDGE_PRUNED, LS_EDGE_CHAINED };
+
+static inline size_t ls_rep(CCStation stations[], size_t i) {
+  return stations[i].closure != -1 ? (size_t)stations[i].closure : i;
+}
+
+static inline size_t ls_other(const ls_edge *e, size_t v) {
+  return e->a == v ? e->b : e->a;
+}
+
+// displacement x_next - x_prev when walking edge e towards next
+static inline CCPoint ls_step_d(const ls_edge *e, size_t next) {
+  return e->a == next ? e->d : (CCPoint){.x = -e->d.x, .y = -e->d.y};
+}
+
+static size_t ls_alive_edge(size_t v, const size_t *adj_start, const size_t *adj,
+                            const uint8_t *edge_state) {
+  for (size_t k = adj_start[v]; k < adj_start[v + 1]; k++) {
+    if (edge_state[adj[k]] == LS_EDGE_ALIVE) return adj[k];
   }
-  double *bx = calloc(adj_station_count, sizeof(double));
-  double *by = calloc(adj_station_count, sizeof(double));
+  return SIZE_MAX;
+}
 
-  DokBuilder *a = dok_builder_create(adj_station_count);
-
-  start_adj *p = calloc(fix_station_count, sizeof(start_adj));
-  int plen = 0;
-
-  for (int i = 0; i < length; i++) {
+static void close_leastsquare(CCStation stations[], size_t length, CCPoint out[]) {
+  // Edges between representative nodes (closures merged into their target)
+  ls_edge *edges = malloc(sizeof(ls_edge) * length);
+  size_t edge_count = 0;
+  for (size_t i = 0; i < length; i++) {
     CCStation *current = &stations[i];
-    if (current->fixed) {
-      continue;
-    }
-    size_t parent_idx = (size_t)current->parent; CCStation *parent = (current->parent != -1) ? &stations[parent_idx] : NULL;
-    size_t current_idx = current - stations;
-        vec3 current_pos = {
-        .x = out[current_idx].x, .y = out[current_idx].y, .z = current->depth};
+    if (current->fixed) continue;
+    size_t parent_idx = (size_t)current->parent;
+    vec3 current_pos = {.x = out[i].x, .y = out[i].y, .z = current->depth};
     vec3 parent_pos = {
-        .x = out[parent_idx].x, .y = out[parent_idx].y, .z = parent->depth};
-
+        .x = out[parent_idx].x, .y = out[parent_idx].y, .z = stations[parent_idx].depth};
     vec3 distance = vec3_subtract(current_pos, parent_pos);
     double wdistance = vec3_magnitude(distance);
-    double weight = 1.0 / (wdistance < 0.1 ? 0.1 : wdistance);
-
-    current = (current->closure != -1) ? &stations[current->closure] : current;
-    parent = (parent->closure != -1) ? &stations[parent->closure] : parent;
-
-    ssize_t to_index = adjust_station_idx[current - stations];
-    ssize_t from_index = adjust_station_idx[parent - stations];
-
-    assert((to_index == -1 && current->fixed) || (to_index >= 0 && !current->fixed));
-    assert((from_index == -1 && parent->fixed) || (from_index >= 0 && !parent->fixed));
-
-    if (!current->fixed) {
-      bx[to_index] += weight * distance.x;
-      by[to_index] += weight * distance.y;
-      dok_builder_add(a, to_index, to_index, weight);
-    }
-
-    if (!parent->fixed) {
-      bx[from_index] += -weight * distance.x;
-      by[from_index] += -weight * distance.y;
-      dok_builder_add(a, from_index, from_index, weight);
-    }
-
-    if (!parent->fixed && !current->fixed) {
-      dok_builder_add(a, to_index, from_index, -weight);
-      dok_builder_add(a, from_index, to_index, -weight);
-    }
-
-    if (current->fixed && !parent->fixed) {
-      p[plen++] = (start_adj){.start_station = current, .to_station = parent, .weight = weight};
-    } else if (parent->fixed && !current->fixed) {
-      p[plen++] = (start_adj){.start_station = parent, .to_station = current, .weight = weight};
-    }
-    assert(plen <= (fix_station_count + 1));
+    size_t a = ls_rep(stations, i);
+    size_t b = ls_rep(stations, parent_idx);
+    if (a == b) continue; // closes onto its own parent, contributes nothing
+    edges[edge_count++] = (ls_edge){
+        .a = a,
+        .b = b,
+        .weight = 1.0 / (wdistance < 0.1 ? 0.1 : wdistance),
+        .d = {.x = distance.x, .y = distance.y}};
   }
 
-  for (int i = 0; i < plen; i++) {
-    start_adj xx = p[i];
-    ssize_t idx = adjust_station_idx[xx.to_station - stations];
-    assert(idx != -1); // used to be if
-    bx[idx] += xx.weight * out[xx.start_station - stations].x;
-    by[idx] += xx.weight * out[xx.start_station - stations].y;
+  size_t *adj_start = calloc(length + 1, sizeof(size_t));
+  for (size_t e = 0; e < edge_count; e++) {
+    adj_start[edges[e].a + 1]++;
+    adj_start[edges[e].b + 1]++;
   }
-  
-  solve(a, bx, by);
-  
-  for (int i = 0; i < length; i++) {
-    CCStation *current = &stations[i];
-    ssize_t idx = adjust_station_idx[current - stations];
-    if (idx != -1) {
-      assert(bx[idx] == bx[idx]); // assert not NaN
-      out[i].x = bx[idx];
-      out[i].y = by[idx];
+  for (size_t v = 0; v < length; v++) adj_start[v + 1] += adj_start[v];
+  size_t *adj = malloc(sizeof(size_t) * 2 * edge_count);
+  size_t *deg = calloc(length, sizeof(size_t));
+  for (size_t e = 0; e < edge_count; e++) {
+    adj[adj_start[edges[e].a] + deg[edges[e].a]++] = e;
+    adj[adj_start[edges[e].b] + deg[edges[e].b]++] = e;
+  }
+  uint8_t *edge_state = calloc(edge_count, sizeof(uint8_t));
+
+  // Prune dangling branches, leaf first. order doubles as work queue.
+  size_t *order = malloc(sizeof(size_t) * length);
+  size_t *order_edge = malloc(sizeof(size_t) * length);
+  size_t head = 0, tail = 0;
+  for (size_t v = 0; v < length; v++) {
+    if (!stations[v].fixed && deg[v] == 1) order[tail++] = v;
+  }
+  while (head < tail) {
+    size_t v = order[head];
+    size_t e = ls_alive_edge(v, adj_start, adj, edge_state);
+    order_edge[head++] = e;
+    if (e == SIZE_MAX) continue;
+    edge_state[e] = LS_EDGE_PRUNED;
+    deg[v] = 0;
+    size_t u = ls_other(&edges[e], v);
+    if (--deg[u] == 1 && !stations[u].fixed) order[tail++] = u;
+  }
+
+  // Collapse chains between junctions (fixed nodes or degree != 2)
+#define LS_IS_JUNCTION(v) (stations[v].fixed || deg[v] != 2)
+  ls_chain *chains = malloc(sizeof(ls_chain) * (edge_count + 1));
+  ls_step *steps = malloc(sizeof(ls_step) * (edge_count + 1));
+  size_t chain_count = 0, step_count = 0;
+  for (size_t j = 0; j < length; j++) {
+    if (deg[j] == 0 || !LS_IS_JUNCTION(j)) continue;
+    for (size_t k = adj_start[j]; k < adj_start[j + 1]; k++) {
+      size_t e = adj[k];
+      if (edge_state[e] != LS_EDGE_ALIVE) continue;
+      ls_chain c = {.from = j, .first = step_count};
+      size_t cur = j;
+      for (;;) {
+        edge_state[e] = LS_EDGE_CHAINED;
+        size_t next = ls_other(&edges[e], cur);
+        CCPoint sd = ls_step_d(&edges[e], next);
+        c.d.x += sd.x;
+        c.d.y += sd.y;
+        c.resistance += 1.0 / edges[e].weight;
+        steps[step_count++] = (ls_step){.edge = e, .next = next};
+        c.count++;
+        cur = next;
+        if (LS_IS_JUNCTION(cur)) break;
+        e = ls_alive_edge(cur, adj_start, adj, edge_state);
+        assert(e != SIZE_MAX);
+      }
+      c.to = cur;
+      chains[chain_count++] = c;
     }
   }
-  for (int i = 0; i < length; i++) {
+
+  // Solve the reduced system on the adjustable junctions
+  ssize_t *junction_idx = malloc(sizeof(ssize_t) * length);
+  size_t junction_count = 0;
+  for (size_t v = 0; v < length; v++) {
+    bool adjustable = deg[v] > 0 && !stations[v].fixed && LS_IS_JUNCTION(v);
+    junction_idx[v] = adjustable ? (ssize_t)junction_count++ : -1;
+  }
+#undef LS_IS_JUNCTION
+
+  if (junction_count > 0) {
+    double *bx = calloc(junction_count, sizeof(double));
+    double *by = calloc(junction_count, sizeof(double));
+    DokBuilder *a = dok_builder_create(junction_count);
+
+    for (size_t i = 0; i < chain_count; i++) {
+      ls_chain *c = &chains[i];
+      if (c->from == c->to) continue;
+      double weight = 1.0 / c->resistance;
+      ssize_t to_index = junction_idx[c->to];
+      ssize_t from_index = junction_idx[c->from];
+
+      if (to_index != -1) {
+        bx[to_index] += weight * c->d.x;
+        by[to_index] += weight * c->d.y;
+        dok_builder_add(a, to_index, to_index, weight);
+      }
+      if (from_index != -1) {
+        bx[from_index] += -weight * c->d.x;
+        by[from_index] += -weight * c->d.y;
+        dok_builder_add(a, from_index, from_index, weight);
+      }
+      if (to_index != -1 && from_index != -1) {
+        dok_builder_add(a, to_index, from_index, -weight);
+        dok_builder_add(a, from_index, to_index, -weight);
+      } else if (to_index != -1) {
+        bx[to_index] += weight * out[c->from].x;
+        by[to_index] += weight * out[c->from].y;
+      } else if (from_index != -1) {
+        bx[from_index] += weight * out[c->to].x;
+        by[from_index] += weight * out[c->to].y;
+      }
+    }
+
+    solve(a, bx, by);
+
+    for (size_t v = 0; v < length; v++) {
+      ssize_t idx = junction_idx[v];
+      if (idx != -1) {
+        assert(bx[idx] == bx[idx]); // assert not NaN
+        out[v].x = bx[idx];
+        out[v].y = by[idx];
+      }
+    }
+    free(bx);
+    free(by);
+    dok_builder_destroy(a);
+  }
+
+  // Spread each chain's misclosure along it, proportional to resistance
+  for (size_t i = 0; i < chain_count; i++) {
+    ls_chain *c = &chains[i];
+    CCPoint from = out[c->from];
+    double mx = out[c->to].x - from.x - c->d.x;
+    double my = out[c->to].y - from.y - c->d.y;
+    CCPoint acc = {0};
+    double resistance = 0;
+    for (size_t j = 0; j + 1 < c->count; j++) {
+      ls_step *s = &steps[c->first + j];
+      CCPoint sd = ls_step_d(&edges[s->edge], s->next);
+      acc.x += sd.x;
+      acc.y += sd.y;
+      resistance += 1.0 / edges[s->edge].weight;
+      double f = resistance / c->resistance;
+      out[s->next].x = from.x + acc.x + mx * f;
+      out[s->next].y = from.y + acc.y + my * f;
+    }
+  }
+
+  // Dangling branches follow their attachment point, root first
+  for (size_t i = tail; i > 0; i--) {
+    size_t v = order[i - 1];
+    size_t e = order_edge[i - 1];
+    if (e == SIZE_MAX) continue;
+    size_t u = ls_other(&edges[e], v);
+    CCPoint sd = ls_step_d(&edges[e], v);
+    out[v].x = out[u].x + sd.x;
+    out[v].y = out[u].y + sd.y;
+  }
+
+  for (size_t i = 0; i < length; i++) {
     CCStation *s = &stations[i];
     if (s->closure != -1) {
       out[i].x = out[(size_t)s->closure].x;
       out[i].y = out[(size_t)s->closure].y;
     }
   }
-  free(bx);
-  free(by);
-  dok_builder_destroy(a);
-  free(p);
-  free(adjust_station_idx);
+
+  free(junction_idx);
+  free(steps);
+  free(chains);
+  free(order_edge);
+  free(order);
+  free(edge_state);
+  free(deg);
+  free(adj);
+  free(adj_start);
+  free(edges);
 }
 
 CCLocation *find_datum(CCStation stations[], size_t length) {
