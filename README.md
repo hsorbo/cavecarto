@@ -18,6 +18,24 @@ To drop it into another project, `sh amalgamate.sh` writes the whole library
 to a single source file, `cavecarto.c`, to compile alongside
 `include/cavecarto.h`.
 
+# Performance
+
+Time for one call to `cc_compute_station_xy` on a real survey of 75,720
+stations with 1,691 loop closures, on an Apple M4 Pro (`-O3`):
+
+| Transform                               | Time   |
+|-----------------------------------------|--------|
+| `CC_TRANSFORM_NONE`                     | 0.8 ms |
+| `CC_TRANSFORM_CLOSE_LOOPS` (CSparse)    | 2.8 ms |
+| `CC_TRANSFORM_CLOSE_LOOPS` (Accelerate) | 3.1 ms |
+| `CC_TRANSFORM_MAG_NORTH_FAST`           | 1.0 ms |
+| `CC_TRANSFORM_MAG_NORTH`                | 43 ms  |
+
+Loop closure uses the bundled CSparse solver, or Apple's Accelerate framework
+when built with `USE_ACCELERATE` (the default on Apple platforms). The other
+transforms do not depend on the solver. Run `./bench_suite` to measure on your
+own data.
+
 # Building
 
 ```
