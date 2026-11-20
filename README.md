@@ -1,4 +1,24 @@
-# building
+# cavecarto
+
+Computes station positions for cave survey stick maps. You give it stations,
+either fixed (lat/lon) or relative to a parent (azimuth, length, depth), and it
+returns a position for every station, as local XY in meters or as lat/lon.
+
+It can apply two corrections along the way:
+
+- **Loop closure**: where survey lines meet again, the misclosure is spread
+  over the loops with a least squares fit.
+- **Magnetic north**: compass azimuths are corrected for magnetic declination
+  on the date each station was surveyed, using the IGRF-14 model.
+
+It is a small C99 library with zero dependencies, and has Python and Swift
+bindings.
+
+To drop it into another project, `sh amalgamate.sh` writes the whole library
+to a single source file, `cavecarto.c`, to compile alongside
+`include/cavecarto.h`.
+
+# Building
 
 ```
 mkdir build && cd build
@@ -27,9 +47,30 @@ pip3 uninstall pycavecarto -y
 ```
 
 Usage
+```python
+from datetime import datetime
+from cavecarto import Station, Fixed, Relative, Transform, compute_station_latlon
+
+day = datetime(2024, 3, 1)
+stations = [
+    Station(depth=0, pos=Fixed(lat=60.0, lon=10.0), date=day),
+    Station(depth=5, pos=Relative(azimuth=0, length=30, parent_index=0), date=day),
+    Station(depth=8, pos=Relative(azimuth=90, length=30, parent_index=1), date=day),
+    Station(depth=8, pos=Relative(azimuth=180, length=30, parent_index=2), date=day),
+    # this shot ties back into station 0, closing the loop
+    Station(depth=5, pos=Relative(azimuth=265, length=30, parent_index=3, closed_index=0), date=day),
+]
+
+# datum None: use the first fixed station
+coords = compute_station_latlon(
+    stations, None, Transform.CLOSE_LOOPS | Transform.ADJUST_MAG_NORTH
+)
+for lon, lat in coords:
+    print(lat, lon)
 ```
-import cavecarto
-```
+
+`compute_station_xy` takes the same arguments and returns `(x, y)` in meters
+from the datum, with x growing east and y growing south.
 
 # License
 
