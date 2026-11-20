@@ -1,3 +1,11 @@
+/*
+  CSparse: a Concise Sparse matrix package, version 1.2.0.
+  Copyright (c) 2006, Timothy A. Davis.
+
+  Licensed under the GNU Lesser General Public License, version 2.1 or (at
+  your option) any later version. See the notice in csparse.c and the copy
+  of the license in LICENSE.LGPL-2.1 at the root of this repository.
+*/
 #ifndef _CS_H
 #define _CS_H
 #include <stdio.h>
